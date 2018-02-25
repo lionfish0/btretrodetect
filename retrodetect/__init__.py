@@ -1,7 +1,31 @@
-from scipy.ndimage import interpolation
 import numpy as np
 from retrodetect.normxcorr2 import normxcorr2
 
+def shiftimg(test,shift,cval):
+    new = np.full_like(test,cval)
+    if shift[0]>0:
+        if shift[1]>0:
+            new[shift[0]:,shift[1]:] = test[:-shift[0],:-shift[1]]
+        if shift[1]<0:
+            new[shift[0]:,:shift[1]] = test[:-shift[0],-shift[1]:]
+        if shift[1]==0:
+            new[shift[0]:,:] = test[:-shift[0],:]
+    if shift[0]<0:
+        if shift[1]>0:
+            new[:shift[0],shift[1]:] = test[-shift[0]:,:-shift[1]]
+        if shift[1]<0:
+            new[:shift[0],:shift[1]] = test[-shift[0]:,-shift[1]:]
+        if shift[1]==0:
+            new[:shift[0],:] = test[-shift[0]:,:]
+    if shift[0]==0:
+        if shift[1]>0:
+            new[:,shift[1]:] = test[:,:-shift[1]]
+        if shift[1]<0:
+            new[:,:shift[1]] = test[:,-shift[1]:]
+        if shift[1]==0:
+            new[:,:] = test[:,:]
+    return new
+    
 def getshift(imgA,imgB,start=None,end=None,searchbox=100,step=8):
     """
     Line up part of imgA (specified by start and end) with imgB
@@ -71,8 +95,7 @@ def alignandsubtract(subimg,shift,foreimg,start=None,end=None):
     if end is None:
         end = np.array(subimg.shape)-100
         
-    #TODO: REPLACE THIS WITH SOMETHING FASTER AND APPROXIMATE!
-    subimgshifted = interpolation.shift(subimg[start[0]:end[0],start[1]:end[1]],shift[::-1],cval=255,prefilter=False,order=0)
+    subimgshifted = shiftimg(subimg[start[0]:end[0],start[1]:end[1]],shift[::-1],cval=255)
     temp = foreimg.copy()[start[0]:end[0],start[1]:end[1]]
     temp-=subimgshifted
     return temp

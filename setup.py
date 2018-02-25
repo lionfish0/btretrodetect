@@ -10,5 +10,5 @@ setup(
   download_url = 'https://github.com/lionfish0/retrodetect.git',
   keywords = ['image processing','retroreflectors'],
   classifiers = [],
-  install_requires=['numpy','scipy'],
+  install_requires=['numpy'],
 )
