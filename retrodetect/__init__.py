@@ -34,16 +34,16 @@ def getshift(imgA,imgB,start=None,end=None,searchbox=100,step=8):
     - Search just within shifts of a distance up to
                    the searchbox (default=100px)
     - Search in steps of step pixels (default = 4px)
-    Returns shifted version of imgA.
+    Returns amount imgA is to be shifted
     """
     if start is None:
-        start = np.array([100,100])
+        start = np.array([searchbox,searchbox])
     if end is None:
-        end = np.array(imgA.shape)-100
+        end = np.array(imgA.shape)-searchbox
     
     imgB = imgB[start[0]:end[0],start[1]:end[1]]
     imgApart = imgA[start[0]-searchbox:end[0]+searchbox,start[1]-searchbox:end[1]+searchbox]
-    temp = normxcorr2(imgApart[::step,::step],imgB[::step,::step],mode='valid')
+    temp = normxcorr2(imgB[::step,::step],imgApart[::step,::step],mode='valid')
     shift = step*np.array(np.unravel_index(temp.argmax(), temp.shape))
     shift = shift - searchbox
     return shift
@@ -72,8 +72,8 @@ def getblockmaxedimage(img,blocksize=70,offset=2):
 
     templist = []
     xm,ym = maxes.shape
-    for xoff in range(-offset,offset,1):
-      for yoff in range(-offset,offset,1):
+    for xoff in range(-offset+1,offset,1): #(if offset=1, for xoff in [0]) (if offset=2, for xoff in [-1,0,1])...
+      for yoff in range(-offset+1,offset,1):
         templist.append(maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset])
     max_img = templist[0]
     for im in templist[1:]:
@@ -95,7 +95,7 @@ def alignandsubtract(subimg,shift,foreimg,start=None,end=None):
     if end is None:
         end = np.array(subimg.shape)-100
         
-    subimgshifted = shiftimg(subimg[start[0]:end[0],start[1]:end[1]],shift[::-1],cval=255)
+    subimgshifted = shiftimg(subimg[start[0]:end[0],start[1]:end[1]],shift,cval=255)
     temp = foreimg.copy()[start[0]:end[0],start[1]:end[1]]
     temp-=subimgshifted
     return temp
