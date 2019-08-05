@@ -156,7 +156,7 @@ def detect(flash,noflash):
     """
     Using defaults, run the algorithm on the two images
     """
-    shift = getshift(flash,noflash)
+    shift = ensemblegetshift(flash,noflash)
     out_img = getblockmaxedimage(noflash)
     done = alignandsubtract(out_img,shift,flash)
     return done
