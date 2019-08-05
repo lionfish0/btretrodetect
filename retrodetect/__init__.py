@@ -101,7 +101,7 @@ def old_getblockmaxedimage(img,blocksize=70,offset=2):
             out_img[blockx+(blocksize*offset):blockx+blocksize+(blocksize*offset),blocky+(blocksize*offset):blocky+blocksize+(blocksize*offset)] = max_img[x,y]
     return out_img
     
-def getblockmaxedimagenew(img,blocksize, offset):
+def getblockmaxedimage(img,blocksize, offset):
     """
     Effectively replaces each pixel with approximately the maximum of all the
     pixels within offset*blocksize of the pixel (in a square).
