@@ -115,9 +115,9 @@ def getblockmaxedimage(img,blocksize, offset):
     blocksize = size of the squares
     offset = how far from the pixel to look for maximum
     """
-    k = int(arr.shape[0] / blocksize)
-    l = int(arr.shape[1] / blocksize)
-    maxes = arr.reshape(k,blocksize,l,blocksize).max(axis=(-1,-3)) #from https://stackoverflow.com/questions/18645013/windowed-maximum-in-numpy
+    k = int(img.shape[0] / blocksize)
+    l = int(img.shape[1] / blocksize)
+    maxes = img[:k*blocksize,:l*blocksize].reshape(k,blocksize,l,blocksize).max(axis=(-1,-3)) #from https://stackoverflow.com/questions/18645013/windowed-maximum-in-numpy
     
     templist = []
     xm,ym = maxes.shape
@@ -128,13 +128,14 @@ def getblockmaxedimage(img,blocksize, offset):
     for im in templist[1:]:
         max_img = np.maximum(max_img,im)
     
-    out_img = np.empty_like(img)
-    new_inner_img = max_img.repeat(blocksize,axis=0).repeat(blocksize,axis=1)
-    out_img[blocksize*offset:-(blocksize*offset),blocksize*offset:-(blocksize*offset)] = new_inner_img
-    out_img[:blocksize*offset,:] = 255
-    out_img[-(blocksize*offset):,:] = 255
-    out_img[:,:blocksize*offset] = 255
-    out_img[:,-(blocksize*offset):] = 255
+    out_img = np.full_like(img,255)
+    inner_img = max_img.repeat(blocksize,axis=0).repeat(blocksize,axis=1)
+    #s = (out_img.shape-new_inner_img.shape)/2
+    out_img[blocksize*offset:(blocksize*offset+inner_img.shape[0]),blocksize*offset:(blocksize*offset+inner_img.shape[1])] = inner_img
+#    out_img[:blocksize*offset,:] = 255
+#    out_img[-(blocksize*offset):,:] = 255
+#    out_img[:,:blocksize*offset] = 255
+#    out_img[:,-(blocksize*offset):] = 255
     return out_img
 
 def alignandsubtract(subimg,shift,foreimg,start=None,end=None):
