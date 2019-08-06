@@ -62,7 +62,9 @@ def ensemblegetshift(imgA,imgB,searchbox=100,step=8,searchblocksize=50,ensembles
     shifts = np.zeros([len(starts),2])
     for i,start in enumerate(starts):
         shifts[i] = getshift(imgA,imgB,step=step,searchbox=searchbox,start=start,end=start+np.array([searchblocksize,searchblocksize]))
-    return np.median(shifts,0)    
+    medianshift = np.median(shifts,0)
+    medianshift = [int(medianshift[0]),int(medianshift[1])]
+    return medianshift
 
 def old_getblockmaxedimage(img,blocksize=70,offset=2):
     """
@@ -115,23 +117,41 @@ def getblockmaxedimage(img,blocksize, offset):
     blocksize = size of the squares
     offset = how far from the pixel to look for maximum
     """
+    import time
+    times = []
+    times.append(time.time())
     k = int(img.shape[0] / blocksize)
     l = int(img.shape[1] / blocksize)
-    maxes = img[:k*blocksize,:l*blocksize].reshape(k,blocksize,l,blocksize).max(axis=(-1,-3)) #from https://stackoverflow.com/questions/18645013/windowed-maximum-in-numpy
-    
+    if blocksize==1:
+        maxes = img
+    else:
+        maxes = img[:k*blocksize,:l*blocksize].reshape(k,blocksize,l,blocksize).max(axis=(-1,-3)) #from https://stackoverflow.com/questions/18645013/windowed-maximum-in-numpy
+    times.append(time.time())
     templist = []
     xm,ym = maxes.shape
+    i = 0
     for xoff in range(-offset+1,offset,1): #(if offset=1, for xoff in [0]) (if offset=2, for xoff in [-1,0,1])...
       for yoff in range(-offset+1,offset,1):
-        templist.append(maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset])
-    max_img = templist[0]
-    for im in templist[1:]:
-        max_img = np.maximum(max_img,im)
-    
+        if i==0:
+          max_img = maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset]
+        else:
+          max_img = np.maximum(max_img,maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset])
+        i+=1
+        #templist.append(maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset])
+    times.append(time.time())
+    #max_img = templist[0]
+    #for im in templist[1:]:
+    #    max_img = np.maximum(max_img,im)
+    times.append(time.time())
     out_img = np.full_like(img,255)
+    times.append(time.time())
     inner_img = max_img.repeat(blocksize,axis=0).repeat(blocksize,axis=1)
+    times.append(time.time())
     #s = (out_img.shape-new_inner_img.shape)/2
     out_img[blocksize*offset:(blocksize*offset+inner_img.shape[0]),blocksize*offset:(blocksize*offset+inner_img.shape[1])] = inner_img
+    times.append(time.time())
+    print("----------")
+    print(np.diff(times))
 #    out_img[:blocksize*offset,:] = 255
 #    out_img[-(blocksize*offset):,:] = 255
 #    out_img[:,:blocksize*offset] = 255
