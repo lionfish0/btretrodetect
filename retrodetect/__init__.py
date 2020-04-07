@@ -117,16 +117,16 @@ def getblockmaxedimage(img,blocksize, offset):
     blocksize = size of the squares
     offset = how far from the pixel to look for maximum
     """
-    import time
-    times = []
-    times.append(time.time())
+    #import time
+    #times = []
+    #times.append(time.time())
     k = int(img.shape[0] / blocksize)
     l = int(img.shape[1] / blocksize)
     if blocksize==1:
         maxes = img
     else:
         maxes = img[:k*blocksize,:l*blocksize].reshape(k,blocksize,l,blocksize).max(axis=(-1,-3)) #from https://stackoverflow.com/questions/18645013/windowed-maximum-in-numpy
-    times.append(time.time())
+    #times.append(time.time())
     templist = []
     xm,ym = maxes.shape
     i = 0
@@ -138,46 +138,47 @@ def getblockmaxedimage(img,blocksize, offset):
           max_img = np.maximum(max_img,maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset])
         i+=1
         #templist.append(maxes[xoff+offset:xoff+xm-offset,yoff+offset:yoff+ym-offset])
-    times.append(time.time())
+    #times.append(time.time())
     #max_img = templist[0]
     #for im in templist[1:]:
     #    max_img = np.maximum(max_img,im)
-    times.append(time.time())
+    #times.append(time.time())
     out_img = np.full_like(img,255)
-    times.append(time.time())
+    #times.append(time.time())
     inner_img = max_img.repeat(blocksize,axis=0).repeat(blocksize,axis=1)
-    times.append(time.time())
+    #times.append(time.time())
     #s = (out_img.shape-new_inner_img.shape)/2
     out_img[blocksize*offset:(blocksize*offset+inner_img.shape[0]),blocksize*offset:(blocksize*offset+inner_img.shape[1])] = inner_img
-    times.append(time.time())
-    print("----------")
-    print(np.diff(times))
+    #times.append(time.time())
+    #print("----------")
+    #print(np.diff(times))
 #    out_img[:blocksize*offset,:] = 255
 #    out_img[-(blocksize*offset):,:] = 255
 #    out_img[:,:blocksize*offset] = 255
 #    out_img[:,-(blocksize*offset):] = 255
     return out_img
 
-def alignandsubtract(subimg,shift,foreimg,start=None,end=None):
+def alignandsubtract(subimg,shift,foreimg,start=None,end=None,margin=100):
     """
     Subtract subimg (after shifting) from foreimg, 
     removing a box defined by start and end (or
-    100 around edge if not specified by start and end)"""
+    margin (default=100) around edge if not specified by start and end)"""
     if start is None:
-        start = np.array([100,100])
+        start = np.array([margin,margin])
     if end is None:
-        end = np.array(subimg.shape)-100
+        end = np.array(subimg.shape)-np.array([margin,margin])
         
     subimgshifted = shiftimg(subimg[start[0]:end[0],start[1]:end[1]],shift,cval=255)
     temp = foreimg.copy()[start[0]:end[0],start[1]:end[1]]
     temp-=subimgshifted
     return temp
     
-def detect(flash,noflash):
+def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksize=50,ensemblesizesqrt=3,dilate=True,margin=10):
     """
     Using defaults, run the algorithm on the two images
     """
-    shift = ensemblegetshift(flash,noflash)
-    out_img = getblockmaxedimage(noflash)
-    done = alignandsubtract(out_img,shift,flash)
+    shift = ensemblegetshift(flash,noflash,searchbox,step,searchblocksize,ensemblesizesqrt)
+    print(shift)
+    if dilate: noflash = getblockmaxedimage(noflash,blocksize,offset)
+    done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
