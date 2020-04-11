@@ -1,5 +1,7 @@
 import numpy as np
 from retrodetect.normxcorr2 import normxcorr2
+import QueueBuffer as QB
+
 
 def shiftimg(test,shift,cval):
     new = np.full_like(test,cval)
@@ -178,7 +180,95 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     Using defaults, run the algorithm on the two images
     """
     shift = ensemblegetshift(flash,noflash,searchbox,step,searchblocksize,ensemblesizesqrt)
-    print(shift)
+    #print(shift)
     if dilate: noflash = getblockmaxedimage(noflash,blocksize,offset)
     done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
+    
+def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysize = 20,blocksize = 10):
+    unsortedsets = []
+    for i in range(n-historysize,n+1):
+        photoitem = q.read(i)
+        if photoitem is None: continue
+        if photoitem[1] is None: continue
+        photoitem[1] = photoitem[1].astype(np.float)
+        tt = photoitem[2]['triggertime']
+        chosenset = None
+        for s in unsortedsets:
+            if np.abs(tt-np.mean([photoi[2]['triggertime'] for photoi in s]))<0.5:
+                chosenset = s
+        if chosenset is None: 
+            unsortedsets.append([photoitem])
+        else:
+            chosenset.append(photoitem)
+
+    sets = []
+    for s in unsortedsets:
+        if len(s)<2: #if the set only has one photo in, skip.
+            continue
+        newset = {'flash':[],'noflash':[]}
+        setmean = np.mean([np.mean(photoimg) for i,photoimg,data in s if photoimg is not None])
+        for photoitem in s:
+            if photoitem[1] is not None:
+                if np.mean(photoitem[1])>setmean+0.1:
+                    newset['flash'].append(photoitem)
+                else:
+                    newset['noflash'].append(photoitem)
+        if len(newset['flash'])==0: continue #no point including sets without a flash
+        sets.append(newset)
+
+    last_diff = None
+    this_diff = None
+    for i,s in enumerate(sets):
+        this_set = i==len(sets)-1 #whether the set is the one that we're looking for the bee in.
+        for s_nf in s['noflash']:
+            if this_set: 
+                diff = detect(s['flash'][0][1],s_nf[1],blocksize=blocksize) #for the current search image we dilate
+                if this_diff is None:
+                    this_diff = diff
+                else:
+                    this_diff = np.minimum(diff,this_diff) 
+            else: 
+                diff = detect(s['flash'][0][1],s_nf[1],dilate=None) #for the past ones we don't
+                if last_diff is None:
+                    last_diff = diff
+                else:
+                    last_diff = np.maximum(diff,last_diff) #TODO: Need to align to other sets
+
+    #we just align to the first of the old sets.
+    imgcorrection = 20
+    shift = ensemblegetshift(sets[-1]['noflash'][0][1],sets[0]['noflash'][0][1],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
+    res = alignandsubtract(last_diff,shift,this_diff,margin=10)
+
+    #get simple image difference to save as patch.
+    img = sets[-1]['flash'][0][1]-sets[-1]['noflash'][0][1]
+    searchimg = res.copy()
+    contact = None
+    for i in range(10):
+        y,x = np.unravel_index(searchimg.argmax(), searchimg.shape)
+        searchmax = searchimg[y,x]
+
+        #if (x<savesize) or (y<savesize) or (x>searchimg.shape[1]-savesize-1) or (y>searchimg.shape[0]-savesize-1): continue
+        #target = 1*(((y-truey+alignmentcorrection)**2 + (x-truex+alignmentcorrection)**2)<10**2)
+        #print(x,truex,y,truey)
+        patch = img[y-savesize+imgcorrection:y+savesize+imgcorrection,x-savesize+imgcorrection:x+savesize+imgcorrection].astype(np.float32)
+        searchimg[y-delsize:y+delsize,x-delsize:x+delsize]=0
+        #patches.append({'patch':patch,'max':searchmax,'x':x,'y':y})
+        patch
+        searchmax
+
+        patimg = patch.copy()
+        centreimg = patimg[17:24,17:24].copy()
+        patimg[37:44,37:44]=0
+
+        centremax=np.max(centreimg.flatten())
+        #centremean=np.mean(centreimg.flatten())
+        mean=np.mean(patimg.flatten())
+        #median=np.median(patimg.flatten())
+        #maxp=np.max(patimg.flatten())
+        #minp=np.min(patimg.flatten())
+        ##print(searchmax,mean,centremax)
+        #Possible contact
+        if (searchmax>thresholds[0]) & (mean<thresholds[1]) & (centremax>7):
+            contact = {'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'mean':mean,'searchmax':searchmax}
+    return contact
