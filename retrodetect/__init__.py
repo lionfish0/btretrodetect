@@ -207,7 +207,7 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysiz
         if len(s)<2: #if the set only has one photo in, skip.
             continue
         newset = {'flash':[],'noflash':[]}
-        setmean = np.mean([np.mean(photoimg) for i,photoimg,data in s if photoimg is not None])
+        setmean = np.mean([np.mean(photoitem[1]) for photoitem in s if photoitem[1] is not None])
         for photoitem in s:
             if photoitem[1] is not None:
                 if np.mean(photoitem[1])>setmean+0.1:
@@ -219,6 +219,7 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysiz
 
     last_diff = None
     this_diff = None
+    if len(sets)<2: return None #we can't do this if we only have one photo set
     for i,s in enumerate(sets):
         this_set = i==len(sets)-1 #whether the set is the one that we're looking for the bee in.
         for s_nf in s['noflash']:
@@ -235,6 +236,13 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysiz
                 else:
                     last_diff = np.maximum(diff,last_diff) #TODO: Need to align to other sets
 
+    #if there are large changes in the image the chances are the camera's moved... remove those sets before then
+    keepafter = 0
+    for i in range(len(sets)-1):
+        if np.mean(np.abs(sets[i]['noflash'][0][1]-sets[-1]['noflash'][0][1]))>3:
+            keepafter = i
+    sets = sets[keepafter:]
+    
     #we just align to the first of the old sets.
     imgcorrection = 20
     shift = ensemblegetshift(sets[-1]['noflash'][0][1],sets[0]['noflash'][0][1],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
