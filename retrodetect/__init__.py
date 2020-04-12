@@ -185,7 +185,7 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
     
-def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysize = 20,blocksize = 10):
+def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75,7],historysize = 20,blocksize = 10):
     unsortedsets = []
     for i in range(n-historysize,n+1):
         photoitem = q.read(i)
@@ -214,12 +214,16 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysiz
                     newset['flash'].append(photoitem)
                 else:
                     newset['noflash'].append(photoitem)
-        if len(newset['flash'])==0: continue #no point including sets without a flash
+        if len(newset['flash'])==0: 
+            print("Excluded no-flash set")
+            continue #no point including sets without a flash
         sets.append(newset)
 
     last_diff = None
     this_diff = None
-    if len(sets)<2: return None #we can't do this if we only have one photo set
+    if len(sets)<2: 
+        print("Fewer than two photo sets available")
+        return None, False #we can't do this if we only have one photo set
     for i,s in enumerate(sets):
         this_set = i==len(sets)-1 #whether the set is the one that we're looking for the bee in.
         for s_nf in s['noflash']:
@@ -251,7 +255,8 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysiz
     #get simple image difference to save as patch.
     img = sets[-1]['flash'][0][1]-sets[-1]['noflash'][0][1]
     searchimg = res.copy()
-    contact = None
+    contact = []
+    found = False
     for i in range(10):
         y,x = np.unravel_index(searchimg.argmax(), searchimg.shape)
         searchmax = searchimg[y,x]
@@ -277,6 +282,11 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75],historysiz
         #minp=np.min(patimg.flatten())
         ##print(searchmax,mean,centremax)
         #Possible contact
-        if (searchmax>thresholds[0]) & (mean<thresholds[1]) & (centremax>7):
-            contact = {'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'mean':mean,'searchmax':searchmax}
-    return contact
+        if (searchmax>thresholds[0]) & (mean<thresholds[1]) & (centremax>thresholds[2]):
+            confident = True
+        else:
+            confident = False
+        if confident: found = True
+        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident})
+        print(searchmax,mean,centremax)
+    return contact, found
