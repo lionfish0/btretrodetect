@@ -250,7 +250,8 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75,7],historys
     #we just align to the first of the old sets.
     imgcorrection = 20
     shift = ensemblegetshift(sets[-1]['noflash'][0][1],sets[0]['noflash'][0][1],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
-    res = alignandsubtract(last_diff,shift,this_diff,margin=10)
+    #res = alignandsubtract(last_diff,shift,this_diff,margin=10)
+    res = detect(this_diff,last_diff,blocksize=10,offset=3)
 
     #get simple image difference to save as patch.
     img = sets[-1]['flash'][0][1]-sets[-1]['noflash'][0][1]
