@@ -185,80 +185,126 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
     
-def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75,7],historysize = 20,blocksize = 10):
+def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10):
+    """
+    thresholds:10,0.75,7
+    photolist = list of photoitems
+    n = index to compute for
+    """
+    from time import time
     unsortedsets = []
-    for i in range(n-historysize,n+1):
-        photoitem = q.read(i)
+    startn = n-historysize
+    if startn<0: startn=0
+    for i in range(startn,n+1):
+        #photoitem = q.read(i)
+        photoitem = photolist[i]
         if photoitem is None: continue
-        if photoitem[1] is None: continue
-        photoitem[1] = photoitem[1].astype(np.float)
-        tt = photoitem[2]['triggertime']
+        if photoitem['img'] is None: continue
+        
+        if 'mean' not in photoitem:
+            photoitem['mean'] = np.mean(photoitem['img'][::5,::5])
+        #photoitem['img'] = photoitem['img'].astype(np.float) #already done
+        tt = photoitem['record']['triggertime']
         chosenset = None
         for s in unsortedsets:
-            if np.abs(tt-np.mean([photoi[2]['triggertime'] for photoi in s]))<0.5:
+            if np.abs(tt-np.mean([photoi['record']['triggertime'] for photoi in s]))<0.5:
                 chosenset = s
         if chosenset is None: 
             unsortedsets.append([photoitem])
         else:
             chosenset.append(photoitem)
 
+    starttime = time()
     sets = []
     for s in unsortedsets:
         if len(s)<2: #if the set only has one photo in, skip.
             continue
         newset = {'flash':[],'noflash':[]}
-        setmean = np.mean([np.mean(photoitem[1]) for photoitem in s if photoitem[1] is not None])
+        setmean = np.mean([photoitem['mean'] for photoitem in s if photoitem['img'] is not None])
         for photoitem in s:
-            if photoitem[1] is not None:
-                if np.mean(photoitem[1])>setmean+0.1:
+            if photoitem['img'] is not None:
+                if photoitem['mean']>setmean+0.1:
                     newset['flash'].append(photoitem)
                 else:
                     newset['noflash'].append(photoitem)
         if len(newset['flash'])==0: 
-            print("Excluded no-flash set")
+            #print("Excluded no-flash set")
             continue #no point including sets without a flash
         sets.append(newset)
+#    print('c',time()-starttime)
 
+
+
+    starttime = time()
     last_diff = None
     this_diff = None
     if len(sets)<2: 
-        print("Fewer than two photo sets available")
+        #print("Fewer than two photo sets available")
         return None, False #we can't do this if we only have one photo set
     for i,s in enumerate(sets):
         this_set = i==len(sets)-1 #whether the set is the one that we're looking for the bee in.
         for s_nf in s['noflash']:
             if this_set: 
-                diff = detect(s['flash'][0][1],s_nf[1],blocksize=blocksize) #for the current search image we dilate
+                intertime = time()
+                diff = detect(s['flash'][0]['img'],s_nf['img'],blocksize=blocksize) #for the current search image we dilate
                 if this_diff is None:
                     this_diff = diff
                 else:
                     this_diff = np.minimum(diff,this_diff) 
+#                print('this_set',time()-intertime)
             else: 
-                diff = detect(s['flash'][0][1],s_nf[1],dilate=None) #for the past ones we don't
-                if last_diff is None:
-                    last_diff = diff
+                intertime = time()
+                if 'nodilationdiff' in s_nf:
+                    diff = s_nf['nodilationdiff']
                 else:
-                    last_diff = np.maximum(diff,last_diff) #TODO: Need to align to other sets
-
+                    diff = detect(s['flash'][0]['img'],s_nf['img'],dilate=None) #for the past ones we don't
+                    if diff is not None:
+                        s_nf['nodilationdiff'] = diff
+                    if last_diff is None:
+                        last_diff = diff
+                    else:
+                        last_diff = np.maximum(diff,last_diff) #TODO: Need to align to other sets
+#                print('not this_set',time()-intertime)
+#    print('d',time()-starttime)
+    
+    if (last_diff is None) or (this_diff is None):
+        return None, False
+    
+    
+    
+    
+    starttime = time()
     #if there are large changes in the image the chances are the camera's moved... remove those sets before then
     keepafter = 0
     for i in range(len(sets)-1):
-        if np.mean(np.abs(sets[i]['noflash'][0][1]-sets[-1]['noflash'][0][1]))>3:
+        if np.mean(np.abs(sets[i]['noflash'][0]['img'][::5,::5]-sets[-1]['noflash'][0]['img'][::5,::5]))>3:
             keepafter = i
     sets = sets[keepafter:]
+#    print('e',time()-starttime)
     
-    #we just align to the first of the old sets.
+    
+    
+    
+#    starttime = time()    
+#    #we just align to the first of the old sets.
     imgcorrection = 20
-    shift = ensemblegetshift(sets[-1]['noflash'][0][1],sets[0]['noflash'][0][1],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
-    #res = alignandsubtract(last_diff,shift,this_diff,margin=10)
-    res = detect(this_diff,last_diff,blocksize=10,offset=3)
-
+#    shift = ensemblegetshift(sets[-1]['noflash'][0]['img'],sets[0]['noflash'][0]['img'],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
+#    #res = alignandsubtract(last_diff,shift,this_diff,margin=10)
+#    print('f',time()-starttime)
+    
+    
+    starttime = time()
+    res = detect(this_diff,last_diff,blocksize=10,offset=3,searchbox=imgcorrection)
+#    print('g',time()-starttime)
+    
+    
+    starttime = time()
     #get simple image difference to save as patch.
-    img = sets[-1]['flash'][0][1]-sets[-1]['noflash'][0][1]
+    img = sets[-1]['flash'][0]['img']-sets[-1]['noflash'][0]['img']
     searchimg = res.copy()
     contact = []
     found = False
-    for i in range(10):
+    for i in range(5):
         y,x = np.unravel_index(searchimg.argmax(), searchimg.shape)
         searchmax = searchimg[y,x]
 
@@ -289,5 +335,9 @@ def detectcontact(q,n,savesize = 20,delsize=15,thresholds = [10,0.75,7],historys
             confident = False
         if confident: found = True
         contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident})
-        print(searchmax,mean,centremax)
+        #print(searchmax,mean,centremax)
+#    print('h',time()-starttime)
+    
+    
+    
     return contact, found
