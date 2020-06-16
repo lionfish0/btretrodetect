@@ -2,7 +2,9 @@ import numpy as np
 from retrodetect.normxcorr2 import normxcorr2
 import QueueBuffer as QB
 import numbers
-from sklearn import svm
+import os
+from libsvm.svmutil import svm_predict,svm_load_model
+
 
 def shiftimg(test,shift,cval):
     new = np.full_like(test,cval)
@@ -186,7 +188,7 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
     
-def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10,clf=None):
+def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10):
     """
     thresholds:10,0.75,7
     photolist = list of photoitems
@@ -338,18 +340,18 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
             confident = False
         if confident: found = True
         
-        if clf is not None:
+        if model is not None:
             outersurround = max(patch[16,20],patch[20,16],patch[24,20],patch[20,24],patch[16,16],patch[16,24],patch[24,16],patch[24,24])
             innersurround = max(patch[18,20],patch[20,18],patch[22,20],patch[20,22],patch[18,18],patch[18,22],patch[22,18],patch[22,22])
             centre = np.sum([patch[20,20],patch[20,21],patch[20,19],patch[19,20],patch[21,20]])
             res=np.array([[searchmax,centremax,mean,outersurround,innersurround,centre]])
-            pred = clf.predict(res)[0]
+            _,_,pred = svm_predict([],res,model,'-q')
         else:
             pred = None
-        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'searchpatch':searchpatch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident,'prediction':pred})
+        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'searchpatch':searchpatch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident,'prediction':pred[0][0]})
         #print(searchmax,mean,centremax)
 #    print('h',time()-starttime)
-    
-    
-    
     return contact, found,searchimg
+   
+pathtoretrodetect = os.path.dirname(__file__)
+model = svm_load_model(pathtoretrodetect+'/beetrack.model')
