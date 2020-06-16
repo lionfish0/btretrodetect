@@ -1,7 +1,8 @@
 import numpy as np
 from retrodetect.normxcorr2 import normxcorr2
 import QueueBuffer as QB
-
+import numbers
+from sklearn import svm
 
 def shiftimg(test,shift,cval):
     new = np.full_like(test,cval)
@@ -185,7 +186,7 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
     
-def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10):
+def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10,clf=None):
     """
     thresholds:10,0.75,7
     photolist = list of photoitems
@@ -200,7 +201,7 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
         photoitem = photolist[i]
         if photoitem is None: continue
         if photoitem['img'] is None: continue
-        
+        assert not isinstance(photoitem['img'][0,0], numbers.Integral), "Need image array to be float not integers."
         if 'mean' not in photoitem:
             photoitem['mean'] = np.mean(photoitem['img'][::5,::5])
         #photoitem['img'] = photoitem['img'].astype(np.float) #already done
@@ -240,7 +241,7 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
     this_diff = None
     if len(sets)<2: 
         #print("Fewer than two photo sets available")
-        return None, False #we can't do this if we only have one photo set
+        return None, False, None #we can't do this if we only have one photo set
     for i,s in enumerate(sets):
         this_set = i==len(sets)-1 #whether the set is the one that we're looking for the bee in.
         for s_nf in s['noflash']:
@@ -268,7 +269,7 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
 #    print('d',time()-starttime)
     
     if (last_diff is None) or (this_diff is None):
-        return None, False
+        return None, False, None
     
     
     
@@ -304,19 +305,21 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
     searchimg = res.copy()
     contact = []
     found = False
-    for i in range(5):
+    for i in range(10):
         y,x = np.unravel_index(searchimg.argmax(), searchimg.shape)
         searchmax = searchimg[y,x]
+
 
         #if (x<savesize) or (y<savesize) or (x>searchimg.shape[1]-savesize-1) or (y>searchimg.shape[0]-savesize-1): continue
         #target = 1*(((y-truey+alignmentcorrection)**2 + (x-truex+alignmentcorrection)**2)<10**2)
         #print(x,truex,y,truey)
         patch = img[y-savesize+imgcorrection:y+savesize+imgcorrection,x-savesize+imgcorrection:x+savesize+imgcorrection].astype(np.float32)
-        searchimg[y-delsize:y+delsize,x-delsize:x+delsize]=0
+        searchpatch = searchimg[y-savesize:y+savesize,x-savesize:x+savesize].astype(np.float32)        
+        #searchimg[max(0,y-delsize):min(searchimg.shape[0],y+delsize),max(0,x-delsize):min(searchimg.shape[1],x+delsize)]=0
+        searchimg[max(0,y-delsize):min(searchimg.shape[0],y+delsize),max(0,x-delsize):min(searchimg.shape[1],x+delsize)]=0
+        #print(x+imgcorrection,y+imgcorrection)
         #patches.append({'patch':patch,'max':searchmax,'x':x,'y':y})
-        patch
-        searchmax
-
+        
         patimg = patch.copy()
         centreimg = patimg[17:24,17:24].copy()
         patimg[37:44,37:44]=0
@@ -334,10 +337,19 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
         else:
             confident = False
         if confident: found = True
-        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident})
+        
+        if clf is not None:
+            outersurround = max(patch[16,20],patch[20,16],patch[24,20],patch[20,24],patch[16,16],patch[16,24],patch[24,16],patch[24,24])
+            innersurround = max(patch[18,20],patch[20,18],patch[22,20],patch[20,22],patch[18,18],patch[18,22],patch[22,18],patch[22,22])
+            centre = np.sum([patch[20,20],patch[20,21],patch[20,19],patch[19,20],patch[21,20]])
+            res=np.array([[searchmax,centremax,mean,outersurround,innersurround,centre]])
+            pred = clf.predict(res)[0]
+        else:
+            pred = None
+        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'searchpatch':searchpatch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident,'prediction':pred})
         #print(searchmax,mean,centremax)
 #    print('h',time()-starttime)
     
     
     
-    return contact, found
+    return contact, found,searchimg
