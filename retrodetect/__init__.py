@@ -190,9 +190,31 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     
 def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10):
     """
-    thresholds:10,0.75,7
-    photolist = list of photoitems
-    n = index to compute for
+    photolist = list of photoitems (these are in the files saved by the tracking system).
+    n = index from this list to compute the locations for.
+    savesize = controls the size of the patch that is saved into the 'contact' object.
+    delsize = controls the size of the patch that is deleted from the search image around a maximum.
+    thresholds = thresholds for 'non-ML' decision boundary for if a maximum is a reflector
+    historysize = how far back through the list to go, when computing
+    blocksize = how much to dilate the current no-flash image compared to the current flash image
+    
+    TODO Fix Bug: The code relies on the savesize = 20, as that places the peak at 20,20 in the patch.
+    
+    Returns:
+    contact = This is a list of dictionaries, each associated with a candidate peak in the search image, with these fields:
+                 x and y - position of this maximum [ESSENTIAL]
+                 patch - the current flash photo minus the current no-flash photo
+                 searchpatch - the difference between current pairs and previous pairs of photos (variously dilated)
+                               which is searched for its maximum values.
+                 mean, searchmax, centremax - various features.
+                 confident - a boolean measure of whether the system thinks this is the dot
+                 prediction - a real value reporting confidence in being a true retroreflector (NEGATIVE=More likely).
+                               the current system works well with a threshold of zero. [ESSENTIAL]
+                 
+    found = whether a confident dot has been found.
+    searchimg = more for debugging, the searchimg used for finding maximums.
+    
+    
     """
     from time import time
     unsortedsets = []
