@@ -188,7 +188,7 @@ def detect(flash,noflash,blocksize=2,offset=3,searchbox=20,step=2,searchblocksiz
     done = alignandsubtract(noflash,shift,flash,margin=margin)
     return done
     
-def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10):
+def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],historysize = 10,blocksize = 10,Npatches=20):
     """
     photolist = list of photoitems (these are in the files saved by the tracking system).
     n = index from this list to compute the locations for.
@@ -214,8 +214,10 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
     found = whether a confident dot has been found.
     searchimg = more for debugging, the searchimg used for finding maximums.
     
+    Npatches = number of patches to consider (each patch is centred on a maximum)
     
-    """
+    
+    """    
     from time import time
     unsortedsets = []
     startn = n-historysize
@@ -253,10 +255,9 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
                 else:
                     newset['noflash'].append(photoitem)
         if len(newset['flash'])==0: 
-            #print("Excluded no-flash set")
             continue #no point including sets without a flash
         sets.append(newset)
-#    print('c',time()-starttime)
+
 
 
 
@@ -264,7 +265,7 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
     last_diff = None
     this_diff = None
     if len(sets)<2: 
-        #print("Fewer than two photo sets available")
+        print("Fewer than two photo sets available")
         return None, False, None #we can't do this if we only have one photo set
     for i,s in enumerate(sets):
         this_set = i==len(sets)-1 #whether the set is the one that we're looking for the bee in.
@@ -276,7 +277,6 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
                     this_diff = diff
                 else:
                     this_diff = np.minimum(diff,this_diff) 
-#                print('this_set',time()-intertime)
             else: 
                 intertime = time()
                 if 'nodilationdiff' in s_nf:
@@ -285,14 +285,13 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
                     diff = detect(s['flash'][0]['img'],s_nf['img'],dilate=None) #for the past ones we don't
                     if diff is not None:
                         s_nf['nodilationdiff'] = diff
-                    if last_diff is None:
-                        last_diff = diff
-                    else:
-                        last_diff = np.maximum(diff,last_diff) #TODO: Need to align to other sets
-#                print('not this_set',time()-intertime)
-#    print('d',time()-starttime)
-    
+                if last_diff is None:
+                    last_diff = diff
+                else:
+                    last_diff = np.maximum(diff,last_diff) #TODO: Need to align to other sets
+        
     if (last_diff is None) or (this_diff is None):
+        print("Insufficient data")
         return None, False, None
     
     
@@ -305,31 +304,20 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
         if np.mean(np.abs(sets[i]['noflash'][0]['img'][::5,::5]-sets[-1]['noflash'][0]['img'][::5,::5]))>3:
             keepafter = i
     sets = sets[keepafter:]
-#    print('e',time()-starttime)
-    
-    
-    
-    
-#    starttime = time()    
 #    #we just align to the first of the old sets.
     imgcorrection = 20
 #    shift = ensemblegetshift(sets[-1]['noflash'][0]['img'],sets[0]['noflash'][0]['img'],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
 #    #res = alignandsubtract(last_diff,shift,this_diff,margin=10)
-#    print('f',time()-starttime)
     
     
-    starttime = time()
     res = detect(this_diff,last_diff,blocksize=10,offset=3,searchbox=imgcorrection)
-#    print('g',time()-starttime)
     
-    
-    starttime = time()
     #get simple image difference to save as patch.
     img = sets[-1]['flash'][0]['img']-sets[-1]['noflash'][0]['img']
     searchimg = res.copy()
     contact = []
     found = False
-    for i in range(10):
+    for i in range(Npatches):
         y,x = np.unravel_index(searchimg.argmax(), searchimg.shape)
         searchmax = searchimg[y,x]
 
@@ -339,22 +327,14 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
         #print(x,truex,y,truey)
         patch = img[y-savesize+imgcorrection:y+savesize+imgcorrection,x-savesize+imgcorrection:x+savesize+imgcorrection].astype(np.float32)
         searchpatch = searchimg[y-savesize:y+savesize,x-savesize:x+savesize].astype(np.float32)        
-        #searchimg[max(0,y-delsize):min(searchimg.shape[0],y+delsize),max(0,x-delsize):min(searchimg.shape[1],x+delsize)]=0
         searchimg[max(0,y-delsize):min(searchimg.shape[0],y+delsize),max(0,x-delsize):min(searchimg.shape[1],x+delsize)]=0
-        #print(x+imgcorrection,y+imgcorrection)
-        #patches.append({'patch':patch,'max':searchmax,'x':x,'y':y})
         
         patimg = patch.copy()
         centreimg = patimg[17:24,17:24].copy()
         patimg[37:44,37:44]=0
 
         centremax=np.max(centreimg.flatten())
-        #centremean=np.mean(centreimg.flatten())
         mean=np.mean(patimg.flatten())
-        #median=np.median(patimg.flatten())
-        #maxp=np.max(patimg.flatten())
-        #minp=np.min(patimg.flatten())
-        ##print(searchmax,mean,centremax)
         #Possible contact
         if (searchmax>thresholds[0]) & (mean<thresholds[1]) & (centremax>thresholds[2]):
             confident = True
@@ -371,8 +351,6 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
         else:
             pred = None
         contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'searchpatch':searchpatch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident,'prediction':pred[0][0]})
-        #print(searchmax,mean,centremax)
-#    print('h',time()-starttime)
     return contact, found,searchimg
    
 pathtoretrodetect = os.path.dirname(__file__)
