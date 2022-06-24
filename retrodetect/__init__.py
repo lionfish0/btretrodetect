@@ -318,6 +318,7 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
     searchimg = res.copy()
     contact = []
     found = False
+    print("---------------------------")
     for i in range(Npatches):
         y,x = np.unravel_index(searchimg.argmax(), searchimg.shape)
         searchmax = searchimg[y,x]
@@ -348,10 +349,25 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
             innersurround = max(patch[18,20],patch[20,18],patch[22,20],patch[20,22],patch[18,18],patch[18,22],patch[22,18],patch[22,22])
             centre = np.sum([patch[20,20],patch[20,21],patch[20,19],patch[19,20],patch[21,20]])
             res=np.array([[searchmax,centremax,mean,outersurround,innersurround,centre]])
-            _,_,pred = svm_predict([],res,model,'-q')
+            #_,_,pred = svm_predict([],res,model,'-q')
+            pred = -4 #250 - centremax
+            #pred -= (centremax-200)/160
+            #pred -= (searchmax-200)/60
+            pred += 50/(1+searchmax) #50->+1
+            pred += 50/(1+centremax)
+            #if centremax>250: pred-=2
+            #if searchmax>70: pred-=2
+            #pred -= min((centremax/innersurround)/30,4)
+            #pred -= (centremax/outersurround)/60
+            pred += 20*innersurround/centremax
+            pred += 20*outersurround/centremax
+            pred += mean/10 #not that helpful
+            pred += outersurround/20
+            pred = [[pred]]
+            print(pred,[x,y],[searchmax,centremax,mean,outersurround,innersurround,centre])
         else:
             pred = None
-        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'searchpatch':searchpatch,'mean':mean,'searchmax':searchmax,'centremax':centremax,'confident':confident,'prediction':pred[0][0]})
+        contact.append({'x':x+imgcorrection,'y':y+imgcorrection,'patch':patch,'searchpatch':searchpatch,'mean':int(mean),'centre':int(centre),'innersurround':int(innersurround),'outersurround':int(outersurround),'searchmax':int(searchmax),'centremax':int(centremax),'confident':confident,'prediction':pred[0][0]})
     return contact, found,searchimg
    
 pathtoretrodetect = os.path.dirname(__file__)
