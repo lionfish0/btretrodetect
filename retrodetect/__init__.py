@@ -226,6 +226,7 @@ def detectcontact(photolist,n,savesize = 20,delsize=15,thresholds = [9,0.75,6],h
         #photoitem = q.read(i)
         photoitem = photolist[i]
         if photoitem is None: continue
+        if photoitem['record'] is None: continue
         if photoitem['img'] is None: continue
         assert not isinstance(photoitem['img'][0,0], numbers.Integral), "Need image array to be float not integers."
         if 'mean' not in photoitem:
