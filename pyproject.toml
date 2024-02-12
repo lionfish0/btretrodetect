@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "retrodetect"
+version = "0.0.1"
+dependencies = [
+  "numpy"
+]
+requires-python = ">=3.8"
+authors = [
+  { name="Mike Smith", email="m.t.smith@sheffield.ac.uk" },
+]
+maintainers = [
+  {name = "XXX", email = "XXX@example.com"}
+]
+description = "Finds retroreflectors in a pair of images"
+readme = "README.md"
+license = {file = "LICENSE.txt"}
+keywords = ["bee", "retroreflectors", "XXX", "XXX", "XXX"]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/pypa/sampleproject"
+Bug_Tracker = "https://github.com/pypa/sampleproject/issues"
+Documentation = "https://readthedocs.org"
+Repository = "https://github.com/me/spam.git"
+Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
