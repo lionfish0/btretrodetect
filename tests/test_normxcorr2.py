@@ -1,2 +1,2 @@
-from src.normxcorr2 import normxcorr2
+from bee_retrodetect.normxcorr2 import normxcorr2
 

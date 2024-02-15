@@ -1,7 +1,7 @@
 import numpy as np
 # from normxcorr2 import normxcorr2
 # import QueueBuffer as QB #SC:did not find it being used
-from image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
+from bee_retrodetect.image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
 import numbers
 import os
 from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?
@@ -218,6 +218,6 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
     return contact, found, searchimg
 
 
-# SC: not in a function
+# SC: not in a function # delete
 pathtoretrodetect = os.path.dirname(__file__)
 model = svm_load_model(pathtoretrodetect+'/beetrack.model')

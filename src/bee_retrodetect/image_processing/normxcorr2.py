@@ -1,19 +1,24 @@
-########################################################################################
-# Author: Ujash Joshi, University of Toronto, 2017                                     #
-# Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de>         #
-# Octave/Matlab normxcorr2 implementation in python 3.5                                #
-# Details:                                                                             #
-# Normalized cross-correlation. Similiar results upto 3 significant digits.            #
-# https://github.com/Sabrewarrior/normxcorr2-python/master/norxcorr2.py                #
-# http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html    #
-########################################################################################
-
+from typing import Any  # for type hinting for ndarray
 import numpy as np
 from scipy.signal import fftconvolve
 
 
-def normxcorr2(template, image, mode="full"):
+def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> np.ndarray[np.float32, Any]:
     """
+    Octave/Matlab normxcorr2 implementation in python 3.5
+    Normalized cross-correlation. Similiar results upto 3 significant digits.  
+    Author: Ujash Joshi, University of Toronto, 2017                    
+    Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de> 
+    https://github.com/Sabrewarrior/normxcorr2-python
+    http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
+    Args:
+        template (np.ndarray[np.float32, Any]): _description_
+        image (np.ndarray[np.float32, Any]): _description_
+        mode (str, optional): _description_. Defaults to "full".
+
+    Returns:
+        np.ndarray[np.float32, Any]: _description_
+    """    """
     Input arrays should be floating point numbers.
     :param template: N-D array, of template or filter you are using for cross-correlation.
     Must be less or equal dimensions to image.
