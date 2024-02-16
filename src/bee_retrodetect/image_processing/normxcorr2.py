@@ -1,9 +1,3 @@
-from typing import Any  # for type hinting for ndarray
-import numpy as np
-from scipy.signal import fftconvolve
-
-
-def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> np.ndarray[np.float32, Any]:
     """
     Octave/Matlab normxcorr2 implementation in python 3.5
     Normalized cross-correlation. Similiar results upto 3 significant digits.  
@@ -11,6 +5,17 @@ def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float
     Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de> 
     https://github.com/Sabrewarrior/normxcorr2-python
     http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
+    Returns:
+        _type_: _description_
+    """
+from typing import Any  # for type hinting for ndarray
+import numpy as np
+from scipy.signal import fftconvolve
+
+
+def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> np.ndarray[np.float32, Any]:
+    """
+    
     Args:
         template (np.ndarray[np.float32, Any]): _description_
         image (np.ndarray[np.float32, Any]): _description_
