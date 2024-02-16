@@ -7,7 +7,8 @@ import os
 from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?
 
 
-def detect(flash, noflash, blocksize=2, offset=3, searchbox=20, step=2, searchblocksize=50, ensemblesizesqrt=3, dilate=True, margin=10):
+def detect(flash, noflash, blocksize=2, offset=3, searchbox=20, step=2, searchblocksize=50, ensemblesizesqrt=3,
+           dilate=True, margin=10):
     """
     Using defaults, run the algorithm on the two images
     """
@@ -20,7 +21,8 @@ def detect(flash, noflash, blocksize=2, offset=3, searchbox=20, step=2, searchbl
     return done
 
 
-def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6], historysize=10, blocksize=10, Npatches=20):
+def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6], historysize=10, blocksize=10,
+                  Npatches=20):
     """
     photolist = list of photoitems (these are in the files saved by the tracking system).
     n = index from this list to compute the locations for.
@@ -52,10 +54,10 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
     """
     from time import time
     unsortedsets = []
-    startn = n-historysize
+    startn = n - historysize
     if startn < 0:
         startn = 0
-    for i in range(startn, n+1):
+    for i in range(startn, n + 1):
         # photoitem = q.read(i)
         photoitem = photolist[i]
         if photoitem is None:
@@ -72,7 +74,7 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
         tt = photoitem['record']['triggertime']
         chosenset = None
         for s in unsortedsets:
-            if np.abs(tt-np.mean([photoi['record']['triggertime'] for photoi in s])) < 0.5:
+            if np.abs(tt - np.mean([photoi['record']['triggertime'] for photoi in s])) < 0.5:
                 chosenset = s
         if chosenset is None:
             unsortedsets.append([photoitem])
@@ -86,10 +88,10 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
             continue
         newset = {'flash': [], 'noflash': []}
         setmean = np.mean([photoitem['mean']
-                          for photoitem in s if photoitem['img'] is not None])
+                           for photoitem in s if photoitem['img'] is not None])
         for photoitem in s:
             if photoitem['img'] is not None:
-                if photoitem['mean'] > setmean+0.1:
+                if photoitem['mean'] > setmean + 0.1:
                     newset['flash'].append(photoitem)
                 else:
                     newset['noflash'].append(photoitem)
@@ -105,7 +107,7 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
         return None, False, None  # we can't do this if we only have one photo set
     for i, s in enumerate(sets):
         # whether the set is the one that we're looking for the bee in.
-        this_set = i == len(sets)-1
+        this_set = i == len(sets) - 1
         for s_nf in s['noflash']:
             if this_set:
                 intertime = time()
@@ -139,20 +141,20 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
     starttime = time()
     # if there are large changes in the image the chances are the camera's moved... remove those sets before then
     keepafter = 0
-    for i in range(len(sets)-1):
-        if np.mean(np.abs(sets[i]['noflash'][0]['img'][::5, ::5]-sets[-1]['noflash'][0]['img'][::5, ::5])) > 3:
+    for i in range(len(sets) - 1):
+        if np.mean(np.abs(sets[i]['noflash'][0]['img'][::5, ::5] - sets[-1]['noflash'][0]['img'][::5, ::5])) > 3:
             keepafter = i
     sets = sets[keepafter:]
-#    #we just align to the first of the old sets.
+    #    #we just align to the first of the old sets.
     imgcorrection = 20
-#    shift = ensemblegetshift(sets[-1]['noflash'][0]['img'],sets[0]['noflash'][0]['img'],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
-#    #res = alignandsubtract(last_diff,shift,this_diff,margin=10)
+    #    shift = ensemblegetshift(sets[-1]['noflash'][0]['img'],sets[0]['noflash'][0]['img'],searchbox=imgcorrection,step=2,searchblocksize=50,ensemblesizesqrt=3)
+    #    #res = alignandsubtract(last_diff,shift,this_diff,margin=10)
 
     res = detect(this_diff, last_diff, blocksize=10,
                  offset=3, searchbox=imgcorrection)
 
     # get simple image difference to save as patch.
-    img = sets[-1]['flash'][0]['img']-sets[-1]['noflash'][0]['img']
+    img = sets[-1]['flash'][0]['img'] - sets[-1]['noflash'][0]['img']
     searchimg = res.copy()
     contact = []
     found = False
@@ -164,12 +166,13 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
         # if (x<savesize) or (y<savesize) or (x>searchimg.shape[1]-savesize-1) or (y>searchimg.shape[0]-savesize-1): continue
         # target = 1*(((y-truey+alignmentcorrection)**2 + (x-truex+alignmentcorrection)**2)<10**2)
         # print(x,truex,y,truey)
-        patch = img[y-savesize+imgcorrection:y+savesize+imgcorrection, x -
-                    savesize+imgcorrection:x+savesize+imgcorrection].astype(np.float32)
-        searchpatch = searchimg[y-savesize:y+savesize,
-                                x-savesize:x+savesize].astype(np.float32)
-        searchimg[max(0, y-delsize):min(searchimg.shape[0], y+delsize),
-                  max(0, x-delsize):min(searchimg.shape[1], x+delsize)] = 0
+        patch = img[y - savesize + imgcorrection:y + savesize + imgcorrection, x -
+                                                                               savesize + imgcorrection:x + savesize + imgcorrection].astype(
+            np.float32)
+        searchpatch = searchimg[y - savesize:y + savesize,
+                      x - savesize:x + savesize].astype(np.float32)
+        searchimg[max(0, y - delsize):min(searchimg.shape[0], y + delsize),
+        max(0, x - delsize):min(searchimg.shape[1], x + delsize)] = 0
 
         patimg = patch.copy()
         centreimg = patimg[17:24, 17:24].copy()
@@ -191,33 +194,35 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
             innersurround = max(patch[18, 20], patch[20, 18], patch[22, 20], patch[20, 22],
                                 patch[18, 18], patch[18, 22], patch[22, 18], patch[22, 22])
             centre = np.sum([patch[20, 20], patch[20, 21],
-                            patch[20, 19], patch[19, 20], patch[21, 20]])
+                             patch[20, 19], patch[19, 20], patch[21, 20]])
             res = np.array(
                 [[searchmax, centremax, mean, outersurround, innersurround, centre]])
             # _,_,pred = svm_predict([],res,model,'-q')
             pred = -4  # 250 - centremax
             # pred -= (centremax-200)/160
             # pred -= (searchmax-200)/60
-            pred += 50/(1+searchmax)  # 50->+1
-            pred += 50/(1+centremax)
+            pred += 50 / (1 + searchmax)  # 50->+1
+            pred += 50 / (1 + centremax)
             # if centremax>250: pred-=2
             # if searchmax>70: pred-=2
             # pred -= min((centremax/innersurround)/30,4)
             # pred -= (centremax/outersurround)/60
-            pred += 20*innersurround/centremax
-            pred += 20*outersurround/centremax
-            pred += mean/10  # not that helpful
-            pred += outersurround/20
+            pred += 20 * innersurround / centremax
+            pred += 20 * outersurround / centremax
+            pred += mean / 10  # not that helpful
+            pred += outersurround / 20
             pred = [[pred]]
             print(pred, [x, y], [searchmax, centremax, mean,
-                  outersurround, innersurround, centre])
+                                 outersurround, innersurround, centre])
         else:
             pred = None
-        contact.append({'x': x+imgcorrection, 'y': y+imgcorrection, 'patch': patch, 'searchpatch': searchpatch, 'mean': int(mean), 'centre': int(centre), 'innersurround': int(
-            innersurround), 'outersurround': int(outersurround), 'searchmax': int(searchmax), 'centremax': int(centremax), 'confident': confident, 'prediction': pred[0][0]})
+        contact.append({'x': x + imgcorrection, 'y': y + imgcorrection, 'patch': patch, 'searchpatch': searchpatch,
+                        'mean': int(mean), 'centre': int(centre), 'innersurround': int(
+                innersurround), 'outersurround': int(outersurround), 'searchmax': int(searchmax),
+                        'centremax': int(centremax), 'confident': confident, 'prediction': pred[0][0]})
     return contact, found, searchimg
 
 
 # SC: not in a function # delete
 pathtoretrodetect = os.path.dirname(__file__)
-model = svm_load_model(pathtoretrodetect+'/beetrack.model')
+model = svm_load_model(pathtoretrodetect + '/beetrack.model')

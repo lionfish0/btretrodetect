@@ -1,20 +1,21 @@
-#Author: Ujash Joshi, University of Toronto, 2017                    
-#Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de> 
-#https://github.com/Sabrewarrior/normxcorr2-python
-#http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
-#Addition of docstring is made for clarification of code   
+# Author: Ujash Joshi, University of Toronto, 2017
+# Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de>
+# https://github.com/Sabrewarrior/normxcorr2-python
+# http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
+# Addition of docstring is made for clarification of code
 
-    """This module contains Octave/Matlab normalized cross-correlation implementation in python 3.5.
+"""This module contains Octave/Matlab normalized cross-correlation implementation in python 3.5.
 
-    Returns:
-        _type_: _description_
-    """
-from typing import Any  # for type hinting for ndarray
+Returns:
+    _type_: _description_
+"""
 import numpy as np
 from scipy.signal import fftconvolve
+from typing import Any
 
 
-def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> np.ndarray[np.float32, Any]:
+def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> \
+np.ndarray[np.float32, Any]:
     """Calculates how similar the template appears within different locations of the input image by computing the normalized cross-correlation of the template and image. The resulting matrix C contains the correlation coefficients.
     
     Args:
@@ -35,9 +36,9 @@ def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float
     """
 
     # If this happens, it is probably a mistake
-#    if np.ndim(template) > np.ndim(image) or \
-#            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
-#        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
+    #    if np.ndim(template) > np.ndim(image) or \
+    #            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
+    #        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
 
     template = template - np.mean(template)
     image = image - np.mean(image)
@@ -48,8 +49,8 @@ def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float
     out = fftconvolve(image, ar.conj(), mode=mode)
 
     image = fftconvolve(np.square(image), a1, mode=mode) - \
-        np.square(fftconvolve(image, a1, mode=mode)) / \
-        (np.prod(template.shape))
+            np.square(fftconvolve(image, a1, mode=mode)) / \
+            (np.prod(template.shape))
 
     # Remove small machine precision errors after subtraction
     image[np.where(image < 0)] = 0
