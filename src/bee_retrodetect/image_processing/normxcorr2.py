@@ -1,10 +1,11 @@
-    """
-    Octave/Matlab normxcorr2 implementation in python 3.5
-    Normalized cross-correlation. Similiar results upto 3 significant digits.  
-    Author: Ujash Joshi, University of Toronto, 2017                    
-    Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de> 
-    https://github.com/Sabrewarrior/normxcorr2-python
-    http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
+#Author: Ujash Joshi, University of Toronto, 2017                    
+#Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de> 
+#https://github.com/Sabrewarrior/normxcorr2-python
+#http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
+#Addition of docstring is made for clarification of code   
+
+    """This module contains Octave/Matlab normalized cross-correlation implementation in python 3.5.
+
     Returns:
         _type_: _description_
     """
@@ -14,21 +15,17 @@ from scipy.signal import fftconvolve
 
 
 def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> np.ndarray[np.float32, Any]:
-    """
+    """Calculates how similar the template appears within different locations of the input image by computing the normalized cross-correlation of the template and image. The resulting matrix C contains the correlation coefficients.
     
     Args:
-        template (np.ndarray[np.float32, Any]): _description_
-        image (np.ndarray[np.float32, Any]): _description_
+        template (np.ndarray[np.float32, Any]): N-D array of template or filter used for cross-correlation. Length of each dimension must be less than length of image.
+        image (np.ndarray[np.float32, Any]): input image
         mode (str, optional): _description_. Defaults to "full".
 
     Returns:
         np.ndarray[np.float32, Any]: _description_
     """    """
-    Input arrays should be floating point numbers.
-    :param template: N-D array, of template or filter you are using for cross-correlation.
-    Must be less or equal dimensions to image.
-    Length of each dimension must be less than length of image.
-    :param image: N-D array
+
     :param mode: Options, "full", "valid", "same"
     full (Default): The output of fftconvolve is the full discrete linear convolution of the inputs. 
     Output size will be image size + 1/2 template size in each dimension.
