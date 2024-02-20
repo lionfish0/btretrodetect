@@ -78,49 +78,6 @@ def ensemblegetshift(imgA, imgB, searchbox=100, step=8, searchblocksize=50, ense
     medianshift = [int(medianshift[0]), int(medianshift[1])]
     return medianshift
 
-
-def old_getblockmaxedimage(img, blocksize=70, offset=2):  # SC: Is it still in use?
-    """
-    Effectively replaces each pixel with approximately the maximum of all the
-    pixels within offset*blocksize of the pixel.
-
-    Get a new image of the same size, but filtered such that each square patch
-    of blocksize has its maximum calculated, then a search box of size
-    (1+offset*2)*blocksize centred on each pixel is applied which finds the
-    maximum of these patches.
-
-    img = image to apply the filter to
-    blocksize = size of the squares
-    offset = how far from the pixel to look for maximum
-    """
-    blockcountx = 1 + int(img.shape[0] / blocksize)
-    blockcounty = 1 + int(img.shape[1] / blocksize)
-
-    maxes = np.empty([blockcountx, blockcounty])
-    for x, blockx in enumerate(range(0, img.shape[0], blocksize)):
-        for y, blocky in enumerate(range(0, img.shape[1], blocksize)):
-            maxes[x, y] = np.max(
-                img[blockx:blockx + blocksize, blocky:blocky + blocksize])
-
-    templist = []
-    xm, ym = maxes.shape
-    # (if offset=1, for xoff in [0]) (if offset=2, for xoff in [-1,0,1])...
-    for xoff in range(-offset + 1, offset, 1):
-        for yoff in range(-offset + 1, offset, 1):
-            templist.append(maxes[xoff + offset:xoff + xm -
-                                                offset, yoff + offset:yoff + ym - offset])
-    max_img = templist[0]
-    for im in templist[1:]:
-        max_img = np.maximum(max_img, im)
-
-    out_img = np.ones_like(img) * 255
-    for x, blockx in enumerate(range(0, img.shape[0] - 2 * blocksize * offset, blocksize)):
-        for y, blocky in enumerate(range(0, img.shape[1] - 2 * blocksize * offset, blocksize)):
-            out_img[blockx + (blocksize * offset):blockx + blocksize + (blocksize * offset), blocky + (
-                    blocksize * offset):blocky + blocksize + (blocksize * offset)] = max_img[x, y]
-    return out_img
-
-
 def getblockmaxedimage(img, blocksize, offset):
     """
     Effectively replaces each pixel with approximately the maximum of all the

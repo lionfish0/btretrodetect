@@ -222,7 +222,3 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
                         'centremax': int(centremax), 'confident': confident, 'prediction': pred[0][0]})
     return contact, found, searchimg
 
-
-# SC: not in a function # delete
-pathtoretrodetect = os.path.dirname(__file__)
-model = svm_load_model(pathtoretrodetect + '/beetrack.model')
