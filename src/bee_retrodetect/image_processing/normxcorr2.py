@@ -1,14 +1,14 @@
+"""This module contains Octave/Matlab normalized cross-correlation implementation in python 3.5.
+
+Returns:
+    np.ndarray[np.float32, Any]: _description_
+"""
 # Author: Ujash Joshi, University of Toronto, 2017
 # Based on Octave implementation by: Benjamin Eltzner, 2014 <b.eltzner@gmx.de>
 # https://github.com/Sabrewarrior/normxcorr2-python
 # http://lordsabre.blogspot.ca/2017/09/matlab-normxcorr2-implemented-in-python.html
-# Addition of docstring is made for clarification of code
+# Addition of docstring and modification is made for clarification of code
 
-"""This module contains Octave/Matlab normalized cross-correlation implementation in python 3.5.
-
-Returns:
-    _type_: _description_
-"""
 import numpy as np
 from scipy.signal import fftconvolve
 from typing import Any
@@ -20,21 +20,16 @@ np.ndarray[np.float32, Any]:
     
     Args:
         template (np.ndarray[np.float32, Any]): N-D array of template or filter used for cross-correlation. Length of each dimension must be less than length of image.
-        image (np.ndarray[np.float32, Any]): input image
-        mode (str, optional): _description_. Defaults to "full".
+        image (np.ndarray[np.float32, Any]): Input image
+        mode (str, optional): The option for the output of fftconvolve function. Defaults to "full".   
+            full: The output of fftconvolve is the full discrete linear convolution of the inputs. Output size will be image size + 1/2 template size in each dimension.
+            valid: The output consists only of those elements that do not rely on the zero-padding.
+            same: The output is the same size as image, centered with respect to the ‘full’ output.
 
     Returns:
-        np.ndarray[np.float32, Any]: _description_
-    """    """
-
-    :param mode: Options, "full", "valid", "same"
-    full (Default): The output of fftconvolve is the full discrete linear convolution of the inputs. 
-    Output size will be image size + 1/2 template size in each dimension.
-    valid: The output consists only of those elements that do not rely on the zero-padding.
-    same: The output is the same size as image, centered with respect to the ‘full’ output.
-    :return: N-D array of same dimensions as image. Size depends on mode parameter.
+        np.ndarray[np.float32, Any]: N-D array of same dimensions as image. Size depends on mode parameter. #SC: why same size then said depends on mode?
     """
-
+    #SC: need to do try break
     # If this happens, it is probably a mistake
     #    if np.ndim(template) > np.ndim(image) or \
     #            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:

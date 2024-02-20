@@ -1,5 +1,5 @@
 import numpy as np
-from bee_retrodetect.normxcorr2 import normxcorr2
+from image_processing.normxcorr2 import normxcorr2
 
 
 # import QueueBuffer as QB #SC:did not find it being used
