@@ -1,5 +1,5 @@
 import numpy as np
-from image_processing.normxcorr2 import normxcorr2
+from normxcorr2 import normxcorr2
 
 
 # import QueueBuffer as QB #SC:did not find it being used
@@ -9,6 +9,7 @@ from image_processing.normxcorr2 import normxcorr2
 
 
 def shiftimg(test, shift, cval):
+
     new = np.full_like(test, cval)
     if shift[0] > 0:
         if shift[1] > 0:
@@ -44,14 +45,18 @@ def getshift(imgA, imgB, start=None, end=None, searchbox=100, step=8):
     - Search in steps of step pixels (default = 4px)
     Returns amount imgA is to be shifted
     """
+
+    #SC: Do we need to test for the input of start/end, i.e., an np.array of shape (2,)
     if start is None:
         start = np.array([searchbox, searchbox])
     if end is None:
         end = np.array(imgA.shape) - searchbox
 
     imgB = imgB[start[0]:end[0], start[1]:end[1]]
-    imgApart = imgA[start[0] - searchbox:end[0] +
-                                         searchbox, start[1] - searchbox:end[1] + searchbox]
+
+    #SC this seems redundant, as it is just adding back to what is cropped
+    imgApart = imgA[(start[0] - searchbox):(end[0] + searchbox),
+               (start[1] - searchbox):(end[1] + searchbox)]
     temp = normxcorr2(imgB[::step, ::step],
                       imgApart[::step, ::step], mode='valid')
     shift = step * np.array(np.unravel_index(temp.argmax(), temp.shape))

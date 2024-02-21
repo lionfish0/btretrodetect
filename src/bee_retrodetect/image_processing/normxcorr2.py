@@ -14,14 +14,17 @@ from scipy.signal import fftconvolve
 from typing import Any
 
 
-def normxcorr2(template: np.ndarray[np.float32, Any], image: np.ndarray[np.float32, Any], mode: str = "full") -> \
-np.ndarray[np.float32, Any]:
+def normxcorr2(
+        template: np.ndarray[np.float32, Any],
+        image: np.ndarray[np.float32, Any],
+        mode: str = "full"
+) -> np.ndarray[np.float32, Any]:
     """Calculates how similar the template appears within different locations of the input image by computing the normalized cross-correlation of the template and image. The resulting matrix C contains the correlation coefficients.
     
     Args:
         template (np.ndarray[np.float32, Any]): N-D array of template or filter used for cross-correlation. Length of each dimension must be less than length of image.
         image (np.ndarray[np.float32, Any]): Input image
-        mode (str, optional): The option for the output of fftconvolve function. Defaults to "full".   
+        mode (str, {‘full’, ‘valid’, ‘same’}, optional): The option for the output of fftconvolve function. Defaults to "full".
             full: The output of fftconvolve is the full discrete linear convolution of the inputs. Output size will be image size + 1/2 template size in each dimension.
             valid: The output consists only of those elements that do not rely on the zero-padding.
             same: The output is the same size as image, centered with respect to the ‘full’ output.
