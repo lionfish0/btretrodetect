@@ -1,4 +1,4 @@
-from bee_retrodetect.image_processing.normxcorr2 import normxcorr2
+from retrodetect.image_processing.normxcorr2 import normxcorr2
 import numpy as np
 import pytest
 

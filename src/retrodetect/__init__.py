@@ -2,7 +2,7 @@
 """
 from importlib.metadata import version
 
-__version__ = version("bee-retrodetect")
+__version__ = version("retrodetect")
 
 # populate package namespace
 from detect import detect, detectcontact

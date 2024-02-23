@@ -6,6 +6,8 @@ import numbers
 import os
 from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?
 
+pathtoretrodetect = os.path.dirname(__file__)
+model = svm_load_model(pathtoretrodetect + '/beetrack.model') # loading up filem, .model query
 
 def detect(flash, noflash, blocksize=2, offset=3, searchbox=20, step=2, searchblocksize=50, ensemblesizesqrt=3,
            dilate=True, margin=10):
@@ -222,5 +224,3 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
                         'centremax': int(centremax), 'confident': confident, 'prediction': pred[0][0]})
     return contact, found, searchimg
 
-pathtoretrodetect = os.path.dirname(__file__)
-model = svm_load_model(pathtoretrodetect + '/beetrack.model')
