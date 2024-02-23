@@ -32,7 +32,7 @@ def normxcorr2(
     Returns:
         np.ndarray[np.float32, Any]: N-D array of same dimensions as image. Size depends on mode parameter. #SC: why same size then said depends on mode?
     """
-    #SC: need to do try break
+    # SC: need to do try break
     # If this happens, it is probably a mistake
     #    if np.ndim(template) > np.ndim(image) or \
     #            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
@@ -41,6 +41,11 @@ def normxcorr2(
         np.ndim(template) < np.ndim(image)
     except TypeError:
         print("normxcorr2: TEMPLATE larger than IMG.")
+
+    try:
+        mode in ['full', 'valid', 'same']
+    except ValueError:
+        print("normxcorr2: Invalid MODE.")
 
     template = template - np.mean(template)
     image = image - np.mean(image)
