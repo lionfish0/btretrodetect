@@ -38,6 +38,7 @@ def normxcorr2(
     #            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
     #        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
 
+
     template = template - np.mean(template)
     image = image - np.mean(image)
 
