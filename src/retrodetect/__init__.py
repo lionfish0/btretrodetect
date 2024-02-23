@@ -5,6 +5,5 @@ from importlib.metadata import version
 __version__ = version("retrodetect")
 
 # populate package namespace
-from detect import detect, detectcontact
-from image_processing.image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
-from image_processing.normxcorr2 import normxcorr2
+from .detect import detectcontact
+

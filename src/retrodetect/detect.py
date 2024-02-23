@@ -1,7 +1,7 @@
 import numpy as np
 # from normxcorr2 import normxcorr2
 # import QueueBuffer as QB #SC:did not find it being used
-from image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
+from retrodetect.image_processing.image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
 import numbers
 import os
 from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?

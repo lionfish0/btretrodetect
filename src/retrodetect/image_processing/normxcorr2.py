@@ -37,15 +37,6 @@ def normxcorr2(
     #    if np.ndim(template) > np.ndim(image) or \
     #            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
     #        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
-    try:
-        np.ndim(template) < np.ndim(image)
-    except TypeError:
-        print("normxcorr2: TEMPLATE larger than IMG.")
-
-    try:
-        mode in ['full', 'valid', 'same']
-    except ValueError:
-        print("normxcorr2: Invalid MODE.")
 
     template = template - np.mean(template)
     image = image - np.mean(image)
