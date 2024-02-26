@@ -1,6 +1,6 @@
 import numpy as np
 from .normxcorr2 import normxcorr2
-
+from typing import Any
 
 # import QueueBuffer as QB #SC:did not find it being used
 # import numbers
@@ -35,49 +35,65 @@ def shiftimg(test, shift, cval):
     return new
 
 
-def getshift(imgA, imgB, start=None, end=None, searchbox=100, step=8):
+def getshift(
+        img_1: np.ndarray[np.float32, Any],
+        img_2: np.ndarray[np.float32, Any],
+        start: np.array[np.float32, (2,)] = None,
+        end: np.array[np.float32, (2,)] = None,
+        searchbox: int=100,
+        step: int=8
+) -> np.array:
     """
     Line up part of imgA (specified by start and end) with imgB
+    Returns amount imgA is to be shifted
+
     If start/end None, we clip 100 pixels from the edge.
 
     - Search just within shifts of a distance up to
                    the searchbox (default=100px)
     - Search in steps of step pixels (default = 4px)
     Returns amount imgA is to be shifted
+    :param img_1:
+    :param img_2:
+    :param start:
+    :param end:
+    :param searchbox:
+    :param step:
+    :return:
     """
 
     #SC: Do we need to test for the input of start/end, i.e., an np.array of shape (2,)
     if start is None:
         start = np.array([searchbox, searchbox])
     if end is None:
-        end = np.array(imgA.shape) - searchbox
+        end = np.array(img_1.shape) - searchbox
 
-    imgB = imgB[start[0]:end[0], start[1]:end[1]]
+    img_2 = img_2[start[0]:end[0], start[1]:end[1]]
 
     #SC this seems redundant, as it is just adding back to what is cropped
-    imgApart = imgA[(start[0] - searchbox):(end[0] + searchbox),
+    imgApart = img_1[(start[0] - searchbox):(end[0] + searchbox),
                (start[1] - searchbox):(end[1] + searchbox)]
-    temp = normxcorr2(imgB[::step, ::step],
+    temp = normxcorr2(img_2[::step, ::step],
                       imgApart[::step, ::step], mode='valid')
     shift = step * np.array(np.unravel_index(temp.argmax(), temp.shape))
     shift = shift - searchbox
     return shift
 
 
-def ensemblegetshift(imgA, imgB, searchbox=100, step=8, searchblocksize=50, ensemblesizesqrt=3):
+def ensemblegetshift(img_1, img_2, searchbox=100, step=8, searchblocksize=50, ensemblesizesqrt=3):
     """
     searchblock: how big each search image pair should be.
     ensemblesizesqrt: number of items for ensemble for one dimension.
 
     """
     starts = []
-    for x in np.linspace(0, imgA.shape[0], ensemblesizesqrt + 2)[1:-1].astype(int):
-        for y in np.linspace(0, imgA.shape[1], ensemblesizesqrt + 2)[1:-1].astype(int):
+    for x in np.linspace(0, img_1.shape[0], ensemblesizesqrt + 2)[1:-1].astype(int):
+        for y in np.linspace(0, img_1.shape[1], ensemblesizesqrt + 2)[1:-1].astype(int):
             starts.append([x, y])
 
     shifts = np.zeros([len(starts), 2])
     for i, start in enumerate(starts):
-        shifts[i] = getshift(imgA, imgB, step=step, searchbox=searchbox,
+        shifts[i] = getshift(img_1, img_2, step=step, searchbox=searchbox,
                              start=start, end=start + np.array([searchblocksize, searchblocksize]))
     medianshift = np.median(shifts, 0)
     medianshift = [int(medianshift[0]), int(medianshift[1])]
