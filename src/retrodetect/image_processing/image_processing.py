@@ -2,6 +2,7 @@ import numpy as np
 from .normxcorr2 import normxcorr2
 from typing import Any
 
+
 # import QueueBuffer as QB #SC:did not find it being used
 # import numbers
 # import os
@@ -9,7 +10,6 @@ from typing import Any
 
 
 def shiftimg(test, shift, cval):
-
     new = np.full_like(test, cval)
     if shift[0] > 0:
         if shift[1] > 0:
@@ -36,16 +36,16 @@ def shiftimg(test, shift, cval):
 
 
 def getshift(
-        img_1: np.ndarray[np.float32, Any],
-        img_2: np.ndarray[np.float32, Any],
-        start: np.array[np.float32, (2,)] = None,
-        end: np.array[np.float32, (2,)] = None,
-        searchbox: int=100,
-        step: int=8
+        img_1: np.array,
+        img_2: np.array,
+        start: np.array = None,
+        end: np.array = None,
+        searchbox: int = 100,
+        step: int = 8
 ) -> np.array:
     """
-    Line up part of imgA (specified by start and end) with imgB
-    Returns amount imgA is to be shifted
+    Line up part of img_1 (specified by start and end) with img_1
+    Returns amount img_1 is to be shifted
 
     If start/end None, we clip 100 pixels from the edge.
 
@@ -62,7 +62,7 @@ def getshift(
     :return:
     """
 
-    #SC: Do we need to test for the input of start/end, i.e., an np.array of shape (2,)
+    # SC: Do we need to test for the input of start/end, i.e., an np.array of shape (2,)
     if start is None:
         start = np.array([searchbox, searchbox])
     if end is None:
@@ -70,7 +70,7 @@ def getshift(
 
     img_2 = img_2[start[0]:end[0], start[1]:end[1]]
 
-    #SC this seems redundant, as it is just adding back to what is cropped
+    # SC this seems redundant, as it is just adding back to what is cropped
     imgApart = img_1[(start[0] - searchbox):(end[0] + searchbox),
                (start[1] - searchbox):(end[1] + searchbox)]
     temp = normxcorr2(img_2[::step, ::step],
@@ -98,6 +98,7 @@ def ensemblegetshift(img_1, img_2, searchbox=100, step=8, searchblocksize=50, en
     medianshift = np.median(shifts, 0)
     medianshift = [int(medianshift[0]), int(medianshift[1])]
     return medianshift
+
 
 def getblockmaxedimage(img, blocksize, offset):
     """

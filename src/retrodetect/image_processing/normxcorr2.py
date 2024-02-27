@@ -11,21 +11,20 @@ Returns:
 
 import numpy as np
 from scipy.signal import fftconvolve
-from typing import Any
 
 
 def normxcorr2(
-        template: np.ndarray[np.float32, Any],
-        image: np.ndarray[np.float32, Any],
+        template: np.array,
+        image: np.array,
         mode: str = "full"
-) -> np.ndarray[np.float32, Any]:
+) -> np.array:
     """Calculates how similar the template appears within different locations of the input image by computing the
     normalized cross-correlation of the template and image. It returns a matrix containing the correlation coefficients.
 
     Args:
-        template (np.ndarray[np.float32, Any]): N-D array of template or filter used for cross-correlation. Length of
-        each dimension must be less than length of image.
-        image (np.ndarray[np.float32, Any]): Input image
+        template: N-D array of template or filter used for cross-correlation. Length of each dimension must be less than
+         length of image.
+        image: Input image
         mode (str, {‘full’, ‘valid’, ‘same’}, optional): The option for the output of fftconvolve function. Defaults to
          "full".
             full: The output of fftconvolve is the full discrete linear convolution of the inputs. Output size will be
@@ -34,7 +33,7 @@ def normxcorr2(
             same: The output is the same size as image, centered with respect to the ‘full’ output.
 
     Returns:
-        np.ndarray[np.float32, Any]: N-D array of same dimensions as image. Size depends on mode parameter. #SC: why same size then said depends on mode?
+        np.array: N-D array of same dimensions as image. Size depends on mode parameter. #SC: why same size then said depends on mode?
 
     """
     # SC: need to do try break
@@ -42,7 +41,6 @@ def normxcorr2(
     #    if np.ndim(template) > np.ndim(image) or \
     #            len([i for i in range(np.ndim(template)) if template.shape[i] > image.shape[i]]) > 0:
     #        print("normxcorr2: TEMPLATE larger than IMG. Arguments may be swapped.")
-
 
     template = template - np.mean(template)
     image = image - np.mean(image)
