@@ -96,15 +96,18 @@ def test_ensemblegetshift_different_searchblocksize_ensemblesizesqrt(img_1, img_
 
 def test_getblockmaxedimage_default(img_2):
     output = getblockmaxedimage(img_2, 2, 3)
-    expected_output = load((os.path.join("data", "getblockmaxedimage_output.npy")))
+    expected_output = load((os.path.join("data", "getblockmaxedimage_output.npz")))
+    expected_output = expected_output['arr_0']
     assert np.allclose(output, expected_output)
 
 
 def test_alignandsubtract_default(img_1):
-    noflash = load((os.path.join("data", "getblockmaxedimage_output.npy")))
+    noflash = load((os.path.join("data", "getblockmaxedimage_output.npz")))
+    noflash = noflash['arr_0']
     flash = img_1
     shift = [-16, 18]
     margin = 100
-    expected_output = load((os.path.join("data", "alignandsubtract_output.npy")))
+    expected_output = load((os.path.join("data", "alignandsubtract_output.npz")))
+    expected_output = expected_output['arr_0']
     output = alignandsubtract(noflash, shift, flash, None, None, margin)
     assert np.allclose(output, expected_output)
