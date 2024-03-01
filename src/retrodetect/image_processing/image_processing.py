@@ -70,7 +70,8 @@ def getshift(
 
     img_2 = img_2[start[0]:end[0], start[1]:end[1]]
 
-    # SC this seems redundant, as it is just adding back to what is cropped
+    # SC this seems redundant, as it is just adding back to what is cropped if Start is none.
+    # SC it seems to make sure the ImgApart is larger than the crops img2
     imgApart = img_1[(start[0] - searchbox):(end[0] + searchbox),
                (start[1] - searchbox):(end[1] + searchbox)]
     temp = normxcorr2(img_2[::step, ::step],
@@ -80,7 +81,13 @@ def getshift(
     return shift
 
 
-def ensemblegetshift(img_1, img_2, searchbox=100, step=8, searchblocksize=50, ensemblesizesqrt=3):
+def ensemblegetshift(
+        img_1: np.array,
+        img_2: np.array,
+        searchbox: int = 100,
+        step: int = 8,
+        searchblocksize: int =50, ensemblesizesqrt=3
+) -> list:
     """
     searchblock: how big each search image pair should be.
     ensemblesizesqrt: number of items for ensemble for one dimension.
