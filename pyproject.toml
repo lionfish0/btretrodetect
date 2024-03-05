@@ -9,8 +9,7 @@ version = "0.0.1"
 dependencies = [
   "numpy",
   "scipy",
-  "libsvm",
-  "typing"
+  "libsvm"
  ]
 requires-python = ">=3.8"
 authors = [
@@ -30,7 +29,12 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-
+[project.optional-dependencies]
+test = [
+  "flake8",
+  'pytest',
+  'opencv-python'
+]
 
 [project.urls]
 Homepage = "https://github.com/pypa/sampleproject"
