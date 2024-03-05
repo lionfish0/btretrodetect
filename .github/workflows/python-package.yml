@@ -24,7 +24,7 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-        requirements: requirements.txt
+        requirements: requirements
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -37,5 +37,6 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
+      working-directory: ./src
       run: |
-        pytest tests/
+        pytest
