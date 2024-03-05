@@ -44,3 +44,6 @@ Bug_Tracker = "https://github.com/pypa/sampleproject/issues"
 Documentation = "https://readthedocs.org"
 Repository = "https://github.com/me/spam.git"
 Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+
+[tool.pytest.ini_options]
+pythonpath = ['src']
