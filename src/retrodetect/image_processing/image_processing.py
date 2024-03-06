@@ -186,11 +186,38 @@ def getblockmaxedimage(
     return out_img
 
 
-def alignandsubtract(subimg, shift, foreimg, start=None, end=None, margin=100):
+def alignandsubtract(
+        subimg: np.array,
+        shift: tuple, #SC: might need to change to tuple after i try detect.py
+        foreimg: np.array,
+        start: np.array = None,
+        end: np.array = None,
+        margin: int = 100
+) -> np.array:
     """
-    Subtract subimg (after shifting) from foreimg, 
-    removing a box defined by start and end (or
-    margin (default=100) around edge if not specified by start and end)"""
+    Subtracts a shifted sub-image from a foreground image, removing a region defined by start and end or
+    by margin (default=100) around edge if not specified by start and end
+    :param subimg: The sub-image to be subtracted.
+    :param shift: The amount to shift the subimg before subtraction.
+    :param foreimg: The foreground image from which the shifted subimg will be subtracted.
+    :param start: The starting indices (x, y) for the region to be removed from the `foreimg`. Defaults to a margin of `margin` pixels from the edges.
+    :param end: The ending indices (exclusive) for the region to be removed from the `foreimg`. Defaults to a margin of `margin` pixels from the edges, calculated based on the `subimg` shape.
+    :param margin: The margin (in pixels) to use around the edges of the image if `start` and `end` are not specified. Defaults to 100 pixels.
+    :return: A new image of the same shape as the specified region in `foreimg` after subtracting the shifted `subimg`.
+
+
+#SC: do we want to do this part
+**Raises:**
+
+* **ValueError:** If `start` or `end` are not compatible shapes with `subimg.shape`.
+
+**Notes:**
+
+* If `start` and `end` are not provided, the function removes a rectangular region of size equal to the `subimg` with a margin of `margin` pixels from the edges of the `foreimg`.
+* The `shiftimg` function is used to shift the `subimg` by the specified `shift` amount before subtraction.
+* The specified region in the `foreimg` is replaced by the element-wise difference between the original and shifted `subimg`.
+
+"""
     if start is None:
         start = np.array([margin, margin])
     if end is None:
