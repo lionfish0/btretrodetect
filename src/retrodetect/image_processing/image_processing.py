@@ -1,17 +1,12 @@
+"""
+This module contains functions used to process the images that are taken for detection of the reflective tags.
+"""
 import numpy as np
 from .normxcorr2 import normxcorr2
-from typing import Any
-
-
-# import QueueBuffer as QB #SC:did not find it being used
-# import numbers
-# import os
-# from libsvm.svmutil import svm_predict,svm_load_model # SC: not used?
-
 
 def shiftimg(
         test: np.array,
-        shift: tuple,
+        shift: tuple, #SC: however, the function (ensemblegetshift) which output for the 'shift' of this function actually returns a list. so not sure how it can work
         cval: int
 ) -> np.array:
     """
@@ -55,25 +50,18 @@ def getshift(
         step: int = 8
 ) -> np.array:
     """
-    Line up part of img_1 (specified by start and end) with img_1
-    Returns amount img_1 is to be shifted
+    Returns the optimal shift to align a cropped region of img_1 with img_2.
+    :param img_1: The input image from which a sub-region will be aligned.
+    :param img_2: The reference image to which the sub-region of img_1 will be aligned.
+    :param start: The starting indices (x, y) for the sub-region within img_1. Defaults to [searchbox, searchbox].
+    :param end: The ending indices (exclusive) for the sub-region within img_1. Defaults to the sub-region ending searchbox pixels from the edge of img_1.
+    :param searchbox: The maximum distance to search for the optimal shift in each direction. Defaults to 100 pixels.
+    :param step: The step size used when searching for the optimal shift. Defaults to 8 pixels.
+    :return: The optimal shift amount (x, y) as a NumPy array. The shift represents the pixel offset needed to align the center of the cropped region in `imgA` with the corresponding region in `imgB`.
 
-    If start/end None, we clip 100 pixels from the edge.
-
-    - Search just within shifts of a distance up to
-                   the searchbox (default=100px)
-    - Search in steps of step pixels (default = 4px)
-    Returns amount imgA is to be shifted
-    :param img_1:
-    :param img_2:
-    :param start:
-    :param end:
-    :param searchbox:
-    :param step:
-    :return:
     """
 
-    # SC: Do we need to test for the input of start/end, i.e., an np.array of shape (2,)
+    # SC: Do we want to do this?  # * **ValueError:** If `start` or `end` are not compatible shapes with `imgA.shape`.
     if start is None:
         start = np.array([searchbox, searchbox])
     if end is None:
