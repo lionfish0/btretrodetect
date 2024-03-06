@@ -20,21 +20,13 @@ def normxcorr2(
 ) -> np.array:
     """Calculates how similar the template appears within different locations of the input image by computing the
     normalized cross-correlation of the template and image. It returns a matrix containing the correlation coefficients.
-
-    Args:
-        template: N-D array of template or filter used for cross-correlation. Length of each dimension must be less than
-         length of image.
-        image: Input image
-        mode (str, {‘full’, ‘valid’, ‘same’}, optional): The option for the output of fftconvolve function. Defaults to
-         "full".
-            full: The output of fftconvolve is the full discrete linear convolution of the inputs. Output size will be
-             image size + 1/2 template size in each dimension.
-            valid: The output consists only of those elements that do not rely on the zero-padding.
-            same: The output is the same size as image, centered with respect to the ‘full’ output.
-
-    Returns:
-        np.array: N-D array of same dimensions as image. Size depends on mode parameter. #SC: why same size then said depends on mode?
-
+    :param template: The N-dimensional template used for the correlation. Each dimension of the template must be smaller than the corresponding dimension of the image.
+    :param image: The N-dimensional input image.
+    :param mode: The mode for the `fftconvolve` function, controlling the output size. Defaults to `"full"`.
+    * "full": The output includes all elements of the convolution, resulting in an output size that is the sum of the image and template sizes minus 1 in each dimension.
+    * "valid": The output only contains elements that do not rely on zero-padding, resulting in an output size smaller than both the image and template sizes.
+    * "same": The output has the same size as the image, centered with respect to the `"full"` output.
+    :return: An N-dimensional array of the same dimensionality as the `image` but with a size that depends on the chosen `mode`.
     """
     # SC: need to do try break
     # If this happens, it is probably a mistake
