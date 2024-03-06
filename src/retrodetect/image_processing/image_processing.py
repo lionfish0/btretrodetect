@@ -9,7 +9,18 @@ from typing import Any
 # from libsvm.svmutil import svm_predict,svm_load_model # SC: not used?
 
 
-def shiftimg(test, shift, cval):
+def shiftimg(
+        test: np.array,
+        shift: tuple,
+        cval: int
+) -> np.array:
+    """
+    Returns an image in NumPy array resulting from the shift given.
+    :param test: A NumPy array representing the input image.
+    :param shift: A tuple of (x, y) representing the amount to shift the image.
+    :param cval: The value to fill the empty space created by the shift
+    :return: A new NumPy array representing the shifted image.
+    """
     new = np.full_like(test, cval)
     if shift[0] > 0:
         if shift[1] > 0:
@@ -86,7 +97,7 @@ def ensemblegetshift(
         img_2: np.array,
         searchbox: int = 100,
         step: int = 8,
-        searchblocksize: int =50, ensemblesizesqrt=3
+        searchblocksize: int = 50, ensemblesizesqrt=3
 ) -> list:
     """
     searchblock: how big each search image pair should be.

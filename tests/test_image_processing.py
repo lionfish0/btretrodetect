@@ -1,5 +1,5 @@
 from retrodetect.image_processing.image_processing import getshift, ensemblegetshift, getblockmaxedimage, \
-    alignandsubtract
+    alignandsubtract, shiftimg
 import numpy as np
 import pytest
 import cv2
@@ -111,3 +111,41 @@ def test_alignandsubtract_default(img_1):
     expected_output = expected_output['arr_0']
     output = alignandsubtract(noflash, shift, flash, None, None, margin)
     assert np.allclose(output, expected_output)
+
+
+@pytest.fixture
+def test_image():
+    return np.array([[1, 2, 3], [4, 5, 6]])
+
+
+@pytest.fixture
+def cval():
+    return 255  # SC: can be any integer
+
+
+@pytest.mark.parametrize(
+    "shift, expected",
+    [
+        # Positive x-shift, positive y-shift
+        ((1, 1), np.array([[255, 255, 255], [255, 1, 2]])),
+        # Positive x-shift, negative y-shift
+        ((1, -1), np.array([[255, 255, 255], [2, 3, 255]])),
+        # Positive x-shift, no y-shift
+        ((1, 0), np.array([[255, 255, 255], [1, 2, 3]])),
+        # Negative x-shift, positive y-shift
+        ((-1, 1), np.array([[255, 4, 5], [255, 255, 255]])),
+        # Negative x-shift, negative y-shift
+        ((-1, -1), np.array([[5, 6, 255], [255, 255, 255]])),
+        # Negative x-shift, no y-shift
+        ((-1, 0), np.array([[4, 5, 6], [255, 255, 255]])),
+        # No x-shift, positive y-shift
+        ((0, 1), np.array([[255, 1, 2], [255, 4, 5]])),
+        # No x-shift, negative y-shift
+        ((0, -1), np.array([[2, 3, 255], [5, 6, 255]])),
+        # No shift
+        ((0, 0), np.array([[1, 2, 3], [4, 5, 6]])),
+    ],
+)
+def test_shiftimg(test_image, shift, cval, expected):
+    result = shiftimg(test_image, shift, cval)
+    assert np.array_equal(result, expected)
