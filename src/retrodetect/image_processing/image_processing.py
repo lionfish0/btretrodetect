@@ -4,9 +4,11 @@ This module contains functions used to process the images that are taken for det
 import numpy as np
 from .normxcorr2 import normxcorr2
 
+
 def shiftimg(
         test: np.array,
-        shift: tuple, #SC: however, the function (ensemblegetshift) which output for the 'shift' of this function actually returns a list. so not sure how it can work
+        shift: tuple,
+        # SC: however, the function (ensemblegetshift) which output for the 'shift' of this function actually returns a list. so not sure how it can work
         cval: int
 ) -> np.array:
     """
@@ -85,11 +87,28 @@ def ensemblegetshift(
         img_2: np.array,
         searchbox: int = 100,
         step: int = 8,
-        searchblocksize: int = 50, ensemblesizesqrt=3
-) -> list:
-    """
+        searchblocksize: int = 50,
+        ensemblesizesqrt=3
+) -> list:  # but the output of this function needs to be a tuple for use in another function shiftimg
+    """#SC is this correct?
+    Calculates the median shift to align img_1 with img_2 using an ensemble approach.
+
     searchblock: how big each search image pair should be.
     ensemblesizesqrt: number of items for ensemble for one dimension.
+    :param img_1: The input image from which sub-regions will be extracted and aligned.
+    :param img_2: The reference image to which different sub-regions of img_1 will be aligned.
+    :param searchbox: The maximum distance to search for the optimal shift in each direction within each sub-region. Defaults to 100 pixels.
+    :param step: The step size used when searching for the optimal shift within each sub-region. Defaults to 8 pixels.
+    :param searchblocksize: The size of the square sub-regions extracted from img_1 for alignment. Defaults to 50 pixels.
+    :param ensemblesizesqrt: The square root of the number of sub-regions to be extracted from each dimension of `imgA` for the ensemble. Defaults to 3, resulting in a total of 9 sub-regions.
+    :return: A list containing the median shift (x, y) as integers.
+
+    **Notes:**
+
+* The function creates an ensemble of sub-regions by extracting them from `imgA` in a grid-like fashion based on `ensemblesizesqrt` and `searchblocksize`.
+* For each sub-region, the `getshift` function is used to find the optimal shift to align it with `imgB`.
+* The median shift across all the sub-regions in the ensemble is then calculated and returned.
+* This approach aims to provide a more robust estimation of the overall shift by considering alignments at multiple locations within `imgA`.
 
     """
     starts = []
@@ -106,19 +125,18 @@ def ensemblegetshift(
     return medianshift
 
 
-def getblockmaxedimage(img, blocksize, offset):
+def getblockmaxedimage(
+        img: np.array,
+        blocksize: int,
+        offset: int
+) -> np.array:
     """
-    Effectively replaces each pixel with approximately the maximum of all the
-    pixels within offset*blocksize of the pixel (in a square).
+    Applies a filter to an image that replaces each pixel with the approximate maximum within a local neighborhood (offset*blocksize).
 
-    Get a new image of the same size, but filtered such that each square patch
-    of blocksize has its maximum calculated, then a search box of size
-    (1+offset*2)*blocksize centred on each pixel is applied which finds the
-    maximum of these patches.
-
-    img = image to apply the filter to
-    blocksize = size of the squares
-    offset = how far from the pixel to look for maximum
+    :param img: The input image.
+    :param blocksize: The size of the square patches used for finding local maxima.
+    :param offset: The extent of the neighborhood around each pixel to search for the maximum, expressed as a multiple of the `blocksize`.
+    :return: A new image with the same shape as the input image, where each pixel is replaced by the approximate maximum within its local neighborhood.
     """
     # import time
     # times = []
