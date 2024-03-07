@@ -45,8 +45,16 @@ def detect(
     return done
 
 
-def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6], historysize=10, blocksize=10,
-                  Npatches=20):
+def detectcontact(
+        photolist: object,
+        n: object,
+        savesize: int = 20,
+        delsize: int = 15,
+        thresholds: object = [9, 0.75, 6],
+        historysize: int = 10,
+        blocksize: object = 10,
+        Npatches: object = 20
+) -> object:
     """
     photolist = list of photoitems (these are in the files saved by the tracking system).
     n = index from this list to compute the locations for.
