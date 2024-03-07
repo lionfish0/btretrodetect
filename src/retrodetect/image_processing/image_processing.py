@@ -89,18 +89,19 @@ def ensemblegetshift(
         step: int = 8,
         searchblocksize: int = 50,
         ensemblesizesqrt=3
-) -> list:  # but the output of this function needs to be a tuple for use in another function shiftimg
+) -> list:  # but the output of this function needs to be a tuple for use in another function alignandsubtract
     """#SC is this correct?
     Calculates the median shift to align img_1 with img_2 using an ensemble approach.
 
     searchblock: how big each search image pair should be.
     ensemblesizesqrt: number of items for ensemble for one dimension.
+
     :param img_1: The input image from which sub-regions will be extracted and aligned.
     :param img_2: The reference image to which different sub-regions of img_1 will be aligned.
     :param searchbox: The maximum distance to search for the optimal shift in each direction within each sub-region. Defaults to 100 pixels.
     :param step: The step size used when searching for the optimal shift within each sub-region. Defaults to 8 pixels.
     :param searchblocksize: The size of the square sub-regions extracted from img_1 for alignment. Defaults to 50 pixels.
-    :param ensemblesizesqrt: The square root of the number of sub-regions to be extracted from each dimension of `imgA` for the ensemble. Defaults to 3, resulting in a total of 9 sub-regions.
+    :param ensemblesizesqrt: The square root of the number of sub-regions to be extracted from each dimension of img_1 for the ensemble. Defaults to 3, resulting in a total of 9 sub-regions.
     :return: A list containing the median shift (x, y) as integers.
 
     **Notes:**
@@ -188,7 +189,7 @@ def getblockmaxedimage(
 
 def alignandsubtract(
         subimg: np.array,
-        shift: tuple, #SC: might need to change to tuple after i try detect.py
+        shift: tuple,
         foreimg: np.array,
         start: np.array = None,
         end: np.array = None,

@@ -7,12 +7,34 @@ import os
 from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?
 
 pathtoretrodetect = os.path.dirname(__file__)
-model = svm_load_model(pathtoretrodetect + '/beetrack.model') # loading up filem, .model query
+model = svm_load_model(pathtoretrodetect + '/beetrack.model')  # loading up filem, .model query
 
-def detect(flash, noflash, blocksize=2, offset=3, searchbox=20, step=2, searchblocksize=50, ensemblesizesqrt=3,
-           dilate=True, margin=10):
+
+def detect(
+        flash: np.array,
+        noflash: np.array,
+        blocksize: int = 2,
+        offset: int = 3,
+        searchbox: int = 20,
+        step: int = 2,
+        searchblocksize: int = 50,
+        ensemblesizesqrt: int = 3,
+        dilate: bool = True,
+        margin: int = 10
+) -> np.array:
     """
-    Using defaults, run the algorithm on the two images
+    Returns the differences detected between two images, flash and noflash.
+    :param flash: The first image, assumed to be taken with flash.
+    :param noflash: The second image, assumed to be taken without flash.
+    :param blocksize: The size of blocks to use for processing the images for the getblockmaxedimage function.Defaults to 2.
+    :param offset: The offset to apply when comparing blocks for the getblockmaxed function. Defaults to 3.
+    :param searchbox: The maximum distance to search for the optimal shift in each direction within each sub-region for ensemblegetshift function. Defaults to 20.
+    :param step: The step size used when searching for the optimal shift within each sub-region for ensemblegetshift function. Defaults to 2.
+    :param searchblocksize: The size of the square sub-regions extracted from flash for alignment for ensemblegetshift function. Defaults to 50.
+    :param ensemblesizesqrt: The square root of the number of sub-regions to be extracted from each dimension of flash for the ensemblegetshift function. Defaults to 3.
+    :param dilate: Whether to perform dilation on the non-flash image before processing. Defaults to True.
+    :param margin: The margin to use when aligning the images for the alignandsubtract function. Defaults to 10.
+    :return: The difference image, highlighting areas of difference between the two input images.
     """
     shift = ensemblegetshift(flash, noflash, searchbox,
                              step, searchblocksize, ensemblesizesqrt)
@@ -223,4 +245,3 @@ def detectcontact(photolist, n, savesize=20, delsize=15, thresholds=[9, 0.75, 6]
                 innersurround), 'outersurround': int(outersurround), 'searchmax': int(searchmax),
                         'centremax': int(centremax), 'confident': confident, 'prediction': pred[0][0]})
     return contact, found, searchimg
-
