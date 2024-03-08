@@ -3,10 +3,6 @@ import numpy as np
 from retrodetect.image_processing.image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
 import numbers
 import os
-from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?
-
-pathtoretrodetect = os.path.dirname(__file__)
-model = svm_load_model(os.path.join(pathtoretrodetect, "beetrack.model"))  # loading up file, .model query
 
 
 def detect(
@@ -219,34 +215,31 @@ def detectcontact(
         if confident:
             found = True
 
-        if model is not None:
-            outersurround = max(patch[16, 20], patch[20, 16], patch[24, 20], patch[20, 24],
-                                patch[16, 16], patch[16, 24], patch[24, 16], patch[24, 24])
-            innersurround = max(patch[18, 20], patch[20, 18], patch[22, 20], patch[20, 22],
-                                patch[18, 18], patch[18, 22], patch[22, 18], patch[22, 22])
-            centre = np.sum([patch[20, 20], patch[20, 21],
-                             patch[20, 19], patch[19, 20], patch[21, 20]])
-            res = np.array(
-                [[searchmax, centremax, mean, outersurround, innersurround, centre]])
-            # _,_,pred = svm_predict([],res,model,'-q')
-            pred = -4  # 250 - centremax
-            # pred -= (centremax-200)/160
-            # pred -= (searchmax-200)/60
-            pred += 50 / (1 + searchmax)  # 50->+1
-            pred += 50 / (1 + centremax)
-            # if centremax>250: pred-=2
-            # if searchmax>70: pred-=2
-            # pred -= min((centremax/innersurround)/30,4)
-            # pred -= (centremax/outersurround)/60
-            pred += 20 * innersurround / centremax
-            pred += 20 * outersurround / centremax
-            pred += mean / 10  # not that helpful
-            pred += outersurround / 20
-            pred = [[pred]]
-            print(pred, [x, y], [searchmax, centremax, mean,
-                                 outersurround, innersurround, centre])
-        else:
-            pred = None
+        outersurround = max(patch[16, 20], patch[20, 16], patch[24, 20], patch[20, 24],
+                            patch[16, 16], patch[16, 24], patch[24, 16], patch[24, 24])
+        innersurround = max(patch[18, 20], patch[20, 18], patch[22, 20], patch[20, 22],
+                            patch[18, 18], patch[18, 22], patch[22, 18], patch[22, 22])
+        centre = np.sum([patch[20, 20], patch[20, 21],
+                         patch[20, 19], patch[19, 20], patch[21, 20]])
+        res = np.array(
+            [[searchmax, centremax, mean, outersurround, innersurround, centre]])
+        pred = -4  # 250 - centremax
+        # pred -= (centremax-200)/160
+        # pred -= (searchmax-200)/60
+        pred += 50 / (1 + searchmax)  # 50->+1
+        pred += 50 / (1 + centremax)
+        # if centremax>250: pred-=2
+        # if searchmax>70: pred-=2
+        # pred -= min((centremax/innersurround)/30,4)
+        # pred -= (centremax/outersurround)/60
+        pred += 20 * innersurround / centremax
+        pred += 20 * outersurround / centremax
+        pred += mean / 10  # not that helpful
+        pred += outersurround / 20
+        pred = [[pred]]
+        print(pred, [x, y], [searchmax, centremax, mean,
+                             outersurround, innersurround, centre])
+
         contact.append({'x': x + imgcorrection, 'y': y + imgcorrection, 'patch': patch, 'searchpatch': searchpatch,
                         'mean': int(mean), 'centre': int(centre), 'innersurround': int(
                 innersurround), 'outersurround': int(outersurround), 'searchmax': int(searchmax),
