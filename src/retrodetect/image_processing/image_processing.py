@@ -63,7 +63,7 @@ def getshift(
 
     """
 
-    # SC: Do we want to do this?  # * **ValueError:** If `start` or `end` are not compatible shapes with `imgA.shape`.
+    # SC: Do we want to do this, but I am not sure with the compatible numbers  # * **ValueError:** If `start` or `end` are not compatible shapes with `imgA.shape`.
     if start is None:
         start = np.array([searchbox, searchbox])
     if end is None:
@@ -71,8 +71,6 @@ def getshift(
 
     img_2 = img_2[start[0]:end[0], start[1]:end[1]]
 
-    # SC this seems redundant, as it is just adding back to what is cropped if Start is none.
-    # SC it seems to make sure the ImgApart is larger than the crops img2
     imgApart = img_1[(start[0] - searchbox):(end[0] + searchbox),
                (start[1] - searchbox):(end[1] + searchbox)]
     temp = normxcorr2(img_2[::step, ::step],
@@ -106,7 +104,7 @@ def ensemblegetshift(
 
     **Notes:**
 
-* The function creates an ensemble of sub-regions by extracting them from `imgA` in a grid-like fashion based on `ensemblesizesqrt` and `searchblocksize`.
+* The function creates an ensemble of sub-regions by extracting them from `img_1` in a grid-like fashion based on `ensemblesizesqrt` and `searchblocksize`.
 * For each sub-region, the `getshift` function is used to find the optimal shift to align it with `imgB`.
 * The median shift across all the sub-regions in the ensemble is then calculated and returned.
 * This approach aims to provide a more robust estimation of the overall shift by considering alignments at multiple locations within `imgA`.

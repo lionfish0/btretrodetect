@@ -1,5 +1,4 @@
 import numpy as np
-# from normxcorr2 import normxcorr2
 # import QueueBuffer as QB #SC:did not find it being used
 from retrodetect.image_processing.image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
 import numbers
@@ -7,7 +6,7 @@ import os
 from libsvm.svmutil import svm_predict, svm_load_model  # SC: svm_predict not used?
 
 pathtoretrodetect = os.path.dirname(__file__)
-model = svm_load_model(pathtoretrodetect + '/beetrack.model')  # loading up filem, .model query
+model = svm_load_model(os.path.join(pathtoretrodetect, "beetrack.model"))  # loading up file, .model query
 
 
 def detect(
