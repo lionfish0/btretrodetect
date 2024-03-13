@@ -1,5 +1,5 @@
 import numpy as np
-# import QueueBuffer as QB #SC:did not find it being used
+
 from retrodetect.image_processing.image_processing import ensemblegetshift, getblockmaxedimage, alignandsubtract
 import numbers
 import os
@@ -52,7 +52,7 @@ def detectcontact(
 ) -> object:
     """
     photolist = list of photoitems (these are in the files saved by the tracking system).
-    n = index from this list to compute the locations for.
+    n = index from this list to compute the locations for. #SC: in DEMO, this n seems to run from 0 to the len of the list
     savesize = controls the size of the patch that is saved into the 'contact' object.
     delsize = controls the size of the patch that is deleted from the search image around a maximum.
     thresholds = thresholds for 'non-ML' decision boundary for if a maximum is a reflector
@@ -94,13 +94,13 @@ def detectcontact(
         if photoitem['img'] is None:
             continue
         assert not isinstance(
-            photoitem['img'][0, 0], numbers.Integral), "Need image array to be float not integers."
+            photoitem['img'][0, 0], numbers.Integral), "Need image array to be float not integers." #SC:check one of the number of the img array
         if 'mean' not in photoitem:
             photoitem['mean'] = np.mean(photoitem['img'][::5, ::5])
         # photoitem['img'] = photoitem['img'].astype(np.float) #already done
         tt = photoitem['record']['triggertime']
-        chosenset = None
-        for s in unsortedsets:
+        chosenset = None #chosenset is always NONE after the loop?
+        for s in unsortedsets: #SC: it is empty in each loop so I don't think it loops through
             if np.abs(tt - np.mean([photoi['record']['triggertime'] for photoi in s])) < 0.5:
                 chosenset = s
         if chosenset is None:
