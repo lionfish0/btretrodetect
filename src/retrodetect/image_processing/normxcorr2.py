@@ -11,7 +11,7 @@ Returns:
 
 import numpy as np
 from scipy.signal import fftconvolve
-
+import warnings
 
 def normxcorr2(
         template: np.array,
@@ -49,6 +49,8 @@ def normxcorr2(
     # Remove small machine precision errors after subtraction
     image[np.where(image < 0)] = 0
 
+    warnings.filterwarnings('ignore')
+    
     template = np.sum(np.square(template))
     out = out / np.sqrt(image * template)
 

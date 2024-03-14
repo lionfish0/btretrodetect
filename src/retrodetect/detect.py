@@ -93,8 +93,9 @@ def detectcontact(
             continue
         if photoitem['img'] is None:
             continue
-        assert not isinstance(
-            photoitem['img'][0, 0], numbers.Integral), "Need image array to be float not integers." #SC:check one of the number of the img array
+        #assert not isinstance(
+        #    photoitem['img'][0, 0], numbers.Integral), "Need image array to be float not integers." #SC:check one of the number of the img array # I think we need to force it
+        photoitem['img'] = photoitem['img'].astype(float)
         if 'mean' not in photoitem:
             photoitem['mean'] = np.mean(photoitem['img'][::5, ::5])
         # photoitem['img'] = photoitem['img'].astype(np.float) #already done
@@ -130,7 +131,7 @@ def detectcontact(
     last_diff = None
     this_diff = None
     if len(sets) < 2:
-        print("Fewer than two photo sets available")
+        print("Fewer than two photo sets available") # warning msg
         return None, False, None  # we can't do this if we only have one photo set
     for i, s in enumerate(sets):
         # whether the set is the one that we're looking for the bee in.
@@ -152,7 +153,7 @@ def detectcontact(
                 else:
                     # for the past ones we don't
                     diff = detect(s['flash'][0]['img'],
-                                  s_nf['img'], dilate=None)
+                                  s_nf['img'], dilate=None) #SC: dilate should be boolean. FALSE
                     if diff is not None:
                         s_nf['nodilationdiff'] = diff
                 if last_diff is None:
