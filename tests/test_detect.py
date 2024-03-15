@@ -51,7 +51,7 @@ def photo_list():
 
     ]
 )
-def test_detectcontact(photo_list, n, contact, found, searchimg):
+def test_detectcontact_fewer_than_two_photosets(photo_list, n, contact, found, searchimg):
     output = detectcontact(photo_list, n)
     expected_output = (contact, found, searchimg)
     assert output == expected_output
