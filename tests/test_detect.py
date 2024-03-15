@@ -4,7 +4,6 @@ import pytest
 import cv2
 import os
 from numpy import load
-from glob import glob
 import pickle
 
 
@@ -55,3 +54,14 @@ def test_detectcontact_fewer_than_two_photosets(photo_list, n, contact, found, s
     output = detectcontact(photo_list, n)
     expected_output = (contact, found, searchimg)
     assert output == expected_output
+
+def test_detectcontact(photo_list):
+    contact, found, searchimg = detectcontact(photo_list,3)
+    assert isinstance(contact, list)
+    assert all(isinstance(item, dict) for item in contact)
+    assert found == False
+    expected_searchimg = load((os.path.join(os.getcwd(), "tests", "data", "searchimg_3.npz")))
+    expected_searchimg = expected_searchimg['arr_0']
+    assert np.allclose(searchimg, expected_searchimg)
+
+

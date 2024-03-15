@@ -6,7 +6,8 @@ import cv2
 import os
 from numpy import load
 
-
+##SC: do we want to add to add tolerance for comparison of np array
+#https://numpy.org/doc/stable/reference/generated/numpy.allclose.html
 @pytest.fixture
 def img_1():
     return cv2.imread(os.path.join(os.getcwd(), "tests", "data", "flash1.jpg"), 0).astype(float)
@@ -148,4 +149,4 @@ def cval():
 )
 def test_shiftimg(test_image, shift, cval, expected):
     result = shiftimg(test_image, shift, cval)
-    assert np.array_equal(result, expected)
+    assert np.allclose(result, expected)
