@@ -5,7 +5,9 @@ import cv2
 import os
 from numpy import load
 import pickle
-
+import tempfile
+import zipfile
+from glob import glob
 
 @pytest.fixture
 def img_1():
@@ -26,8 +28,20 @@ def test_detect_default(img_1, img_2):
 
 @pytest.fixture
 def photo_list():
-    return pickle.load(open(os.path.join(os.getcwd(), "tests", "data", "trial30"), 'rb'))
+    """
+    This docstring describes your test that uses the data.
+    """
+    # Access data files or folders within the temporary_data_dir
+    file_list = []
+    # os.mkdir('photo_object')
+    with zipfile.ZipFile('tests/data/demo.zip') as myzip:
+        myzip.extractall('tests/data/photo_object')
 
+    # for imfilename in myzip.namelist():
+    for imfilename in sorted(glob(os.path.join('tests', 'data', 'photo_object', 'photo_object*.np'))):
+        photoitem = pickle.load(open(imfilename, 'rb'))
+        file_list.append(photoitem)
+    return file_list
 
 @pytest.mark.parametrize(
     "n, contact, found, searchimg",
