@@ -60,7 +60,7 @@ def test_detectcontact(photo_list):
     assert isinstance(contact, list)
     assert all(isinstance(item, dict) for item in contact)
     assert len(contact) == 20
-    assert found == False
+    assert found is False
     expected_searchimg = load((os.path.join(os.getcwd(), "tests", "data", "searchimg_3.npz")))
     expected_searchimg = expected_searchimg['arr_0']
     assert np.allclose(searchimg, expected_searchimg)
@@ -83,7 +83,7 @@ def test_detectcontact(photo_list):
     assert contact[5]['outersurround'] == 2
     assert contact[5]['searchmax'] == 1
     assert contact[5]['centremax'] == 4
-    assert contact[5]['confident'] == False
+    assert contact[5]['confident'] is False
     assert contact[5]['prediction'] == 51.251687502861024
 
 
