@@ -25,23 +25,19 @@ def test_detect_default(img_1, img_2):
     expected_output = expected_output['arr_0']
     assert np.allclose(output, expected_output)
 
-
-@pytest.fixture
-def photo_list():
-    """
-    This docstring describes your test that uses the data.
-    """
-    # Access data files or folders within the temporary_data_dir
-    file_list = []
-    # os.mkdir('photo_object')
+#temporary dir fixture https://docs.pytest.org/en/6.2.x/tmpdir.html#the-tmpdir-fixture
+@pytest.fixture(scope="session")
+def photo_list(tmpdir_factory):
+    p = tmpdir_factory.mktemp("photo_object")
     with zipfile.ZipFile('tests/data/demo.zip') as myzip:
-        myzip.extractall('tests/data/photo_object')
-
-    # for imfilename in myzip.namelist():
-    for imfilename in sorted(glob(os.path.join('tests', 'data', 'photo_object', 'photo_object*.np'))):
+        myzip.extractall(p)
+    file_list = []
+    for imfilename in sorted(glob(os.path.join(p, 'photo_object*.np'))):
         photoitem = pickle.load(open(imfilename, 'rb'))
         file_list.append(photoitem)
+
     return file_list
+
 
 @pytest.mark.parametrize(
     "n, contact, found, searchimg",
