@@ -41,14 +41,14 @@ def detect(
 
 
 def detectcontact(
-        photolist: object,
-        n: object,
+        photolist: list,
+        n: int,
         savesize: int = 20,
         delsize: int = 15,
         thresholds: object = [9, 0.75, 6],
         historysize: int = 10,
-        blocksize: object = 10,
-        Npatches: object = 20
+        blocksize: int = 10,
+        Npatches: int = 20
 ) -> object:
     """
     photolist = list of photoitems (these are in the files saved by the tracking system).
