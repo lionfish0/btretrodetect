@@ -45,37 +45,59 @@ def detectcontact(
         n: int,
         savesize: int = 20,
         delsize: int = 15,
-        thresholds: object = [9, 0.75, 6],
+        thresholds: list = [9, 0.75, 6],
         historysize: int = 10,
         blocksize: int = 10,
         Npatches: int = 20
-) -> object:
+) -> tuple:
     """
-    photolist = list of photoitems (these are in the files saved by the tracking system).
-    n = index from this list to compute the locations for. #SC: in DEMO, this n seems to run from 0 to the len of the list
-    savesize = controls the size of the patch that is saved into the 'contact' object.
-    delsize = controls the size of the patch that is deleted from the search image around a maximum.
-    thresholds = thresholds for 'non-ML' decision boundary for if a maximum is a reflector
-    historysize = how far back through the list to go, when computing
-    blocksize = how much to dilate the current no-flash image compared to the current flash image
+    This function analyzes a sequence of photos captured by a tracking system to detect potential retroreflectors.
+    :param photolist: A list of dictionaries representing captured photos. Each dictionary (`photoitem`) should have the following keys:
+        - `record`: (dictionary) Contains metadata about the photo, including whether the photo is taken with flash (`flash`),
+        end of a set (`endofset`), `flashselection`, `direction`, `index`, and information about the trigger time (`triggertime`, `triggertimestring`).
+        - `img`: (numpy.ndarray) The image data as a 2D array.
+        - `mean` (float, optional): The pre-computed mean value of the image (used for efficiency). If not provided, it will be calculated.
+
+    :param n: The index within `photolist` to use as the current (flash) image for analysis.
+    :param savesize: Controls the size (in pixels) of the square patch extracted around a candidate peak in the search image
+     and to be saved into the output `patch` in the output 'contact'. Defaults to 20.
+    :param delsize: Controls the size (in pixels) of the square patch that is deleted from the search image around the maximum
+     Defaults to 15.
+    :param thresholds: A list of three values used as thresholds for 'non-ML' decision boundary classifying a candidate
+     peak as a potential retroreflector. Defaults to [9, 0.75, 6]. The elements correspond to:
+        - `thresholds[0]`: Maximum intensity threshold in the search image.
+        - `thresholds[1]`: Mean intensity threshold of the patch around the peak.
+        - `thresholds[2]`: Maximum intensity threshold within the central region of the patch. Defaults to [9, 0.75, 6].
+    :param historysize: The number of photos (including the current one) to consider from `photolist` during the analysis.
+    Defaults to 10 photos back in time.
+    :param blocksize: The amount of dilation applied to the current no-flash image before computing the difference with
+    the flash image. Defaults to 10.
+    :param Npatches: The number of patches to consider around potential peaks/maximum in the search image.
+    Defaults to 20.
+    :return: A tuple containing three elements:
+
+        contact (list): A list of dictionaries, each representing a potential retroreflector candidate. Each dictionary (`contact_item`) has the following keys:
+            - `x`: (int) The x-coordinate (pixel position) of the candidate peak in the search image.
+            - `y`: (int) The y-coordinate (pixel position) of the candidate peak in the search image.
+            - `patch`: (numpy.ndarray) The patch extracted from the current flash image around the candidate peak by minusing the current no-flash photo.
+            - `searchpatch`: (numpy.ndarray) The patch extracted from the search image around the candidate peak, i.e.,
+            the difference between current pairs and previous pairs of photos (variously dilated)
+                               which is searched for its maximum values.
+            - `mean`: (int) The mean intensity value of the patch from the current flash image.
+            - `centre`: (int) The maximum intensity value within the central region of the patch from the current flash image.
+            - `innersurround`: (int) The maximum intensity value in a ring-shaped region around the central area of the patch from the current flash image.
+            - `outersurround`: (int) The maximum intensity value in the outer region of the patch from the current flash image.
+            - `searchmax`: (int) The maximum intensity value in the searchpatch.
+            - `centremax`: (int) The maximum intensity value within the central region of the searchpatch.
+            - `confident`: (bool) A flag indicating whether the analysis is confident about the candidate being a retroreflector.
+            - `prediction`: (float) A score reflecting the confidence level (closer to negative values indicates higher confidence).
+
+        found (bool): A boolean value indicating whether a candidate with high confidence (`confident=True`) was found.
+
+        searchimg (numpy.ndarray): The search image used for peak detection after processing and thresholding, useful for debugging.
+
 
     TODO Fix Bug: The code relies on the savesize = 20, as that places the peak at 20,20 in the patch.
-
-    Returns:
-    contact = This is a list of dictionaries, each associated with a candidate peak in the search image, with these fields:
-                 x and y - position of this maximum [ESSENTIAL]
-                 patch - the current flash photo minus the current no-flash photo
-                 searchpatch - the difference between current pairs and previous pairs of photos (variously dilated)
-                               which is searched for its maximum values.
-                 mean, searchmax, centremax - various features.
-                 confident - a boolean measure of whether the system thinks this is the dot
-                 prediction - a real value reporting confidence in being a true retroreflector (NEGATIVE=More likely).
-                               the current system works well with a threshold of zero. [ESSENTIAL]
-
-    found = whether a confident dot has been found.
-    searchimg = more for debugging, the searchimg used for finding maximums.
-
-    Npatches = number of patches to consider (each patch is centred on a maximum)
 
 
     """

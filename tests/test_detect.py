@@ -41,7 +41,7 @@ def photo_list(tmpdir_factory):
 
 @pytest.fixture
 def contact_expected_output():
-    with open('tests/output_contact_n3', 'rb') as file:
+    with open('tests/data/output_contact_n3', 'rb') as file:
         output = pickle.load(file)
     file.close()
     return output
