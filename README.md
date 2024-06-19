@@ -1,2 +1,3 @@
 # retrodetect
-Detect retroreflectors in image pair
+- This new version (completely rewritten) assumes all the photos are flash photos.
+
