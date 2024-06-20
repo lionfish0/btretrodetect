@@ -2,7 +2,7 @@
 - This new version (completely rewritten) assumes all the photos are flash photos.
 
 # install
-pip install git+https://github.com/lionfish0/retrodetect.git
+```pip install git+https://github.com/lionfish0/retrodetect.git```
 
 # usage
 One passes a path and the tool will recursively search through the subdirectories, finding all the images, sorting them (within that folder) and applying the retrodetect algorithm.
