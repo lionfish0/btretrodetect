@@ -11,4 +11,5 @@ setup(
   keywords = ['image processing','retroreflectors'],
   classifiers = [],
   install_requires=['numpy'],
+  scripts=['bin/btretrodetect'],
 )
