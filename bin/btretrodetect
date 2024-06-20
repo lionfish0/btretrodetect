@@ -16,6 +16,9 @@ parser.add_argument('--after',required=False,type=str,help='Only process images 
 parser.add_argument('--before',required=False,type=str,help='Only process images that were created before this time HH:MM:SS')
 parser.add_argument('--refreshcache',help='Whether to refresh the cache',action="store_true")
 parser.add_argument('--threshold',help='Threshold of score before adding to data',type=str,default=0)
+parser.add_argument('--sourcename',help='The name to give this source of labels (default:retrodetect)',type=str,default='retrodetect')
+#TODO: Might want to either; (a) overwrite, (b) skip, (c) append...
+#parser.add_argument('--',help='Stops it overwriting previous labels from this source (default behaviour is to do overwrite)',action="store_true") 
 args = parser.parse_args()
 
 
@@ -23,7 +26,6 @@ def totalsecs(st):
     time_hms = [int(s) for s in re.findall('([0-9]{1,2})[:\+]([0-9]{2})[:\+]([0-9]{2})',st)[0]]
     return time_hms[0]*3600 + time_hms[1]*60 + time_hms[2]
     
-
 after = totalsecs(args.after)
 before = totalsecs(args.before)
 
@@ -46,10 +48,10 @@ for possiblepath in [x[0] for x in os.walk(imgpath) if '/.' not in x[0]]:
                 continue #not a tag
             print("x",end="")
             metastring = "%0.1f"%r[0]+'('+', '.join(["%0.0f" % d for d in r[3:9]])+')'
-            json_item = {"x":int(r[1]),"y":int(r[2]), "source": "retrodetect", "meta": metastring, "version": "retrodetect, v2.0", "label":"", "confidence": r[0]}
+            json_item = {"x":int(r[1]),"y":int(r[2]), "source": args.sourcename, "meta": metastring, "version": "retrodetect, v2.0", "label":"", "confidence": r[0]}
             json_list.append(json_item)
 
-        datapath = possiblepath+'/'+'retrodetect'
+        datapath = possiblepath+'/'+args.sourcename
         try:
             os.mkdir(datapath)
         except FileExistsError:
