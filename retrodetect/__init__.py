@@ -47,15 +47,12 @@ class Retrodetect:
         self.idx = 0
         self.Nmaxdilations = Nmaxdilations
         
-    def find_tags(self,diff,img): #original_diff,original_img):
+    def find_tags(self,diff,img):
         results = []
         savesize = 20
         delsize = 15
-        #img = np.full(np.array(original_img.shape)+40,0)
-        #img[20:-20,20:-20] = original_img
-        #diff = np.full(np.array(original_diff.shape)+40,-5000)
-        #diff[20:-20,20:-20] = original_diff
-        
+
+
         np.set_printoptions(precision=2,suppress=True)
         for Npatches in range(5):
             y,x = np.unravel_index(diff.argmax(), diff.shape)
