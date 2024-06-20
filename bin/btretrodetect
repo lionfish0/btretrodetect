@@ -6,7 +6,7 @@ import argparse
 import os
 import json
 import pickle
-from retrodetect import Retrodetect
+from btretrodetect import Retrodetect
 import json
 import re
 
@@ -16,7 +16,7 @@ parser.add_argument('--after',required=False,type=str,help='Only process images 
 parser.add_argument('--before',required=False,type=str,help='Only process images that were created before this time HH:MM:SS')
 parser.add_argument('--refreshcache',help='Whether to refresh the cache',action="store_true")
 parser.add_argument('--threshold',help='Threshold of score before adding to data',type=str,default=0)
-parser.add_argument('--sourcename',help='The name to give this source of labels (default:retrodetect)',type=str,default='retrodetect')
+parser.add_argument('--sourcename',help='The name to give this source of labels (default:btretrodetect)',type=str,default='btretrodetect')
 #TODO: Might want to either; (a) overwrite, (b) skip, (c) append...
 #parser.add_argument('--',help='Stops it overwriting previous labels from this source (default behaviour is to do overwrite)',action="store_true") 
 args = parser.parse_args()
@@ -48,7 +48,7 @@ for possiblepath in [x[0] for x in os.walk(imgpath) if '/.' not in x[0]]:
                 continue #not a tag
             print("x",end="")
             metastring = "%0.1f"%r[0]+'('+', '.join(["%0.0f" % d for d in r[3:9]])+')'
-            json_item = {"x":int(r[1]),"y":int(r[2]), "source": args.sourcename, "meta": metastring, "version": "retrodetect, v2.0", "label":"", "confidence": r[0]}
+            json_item = {"x":int(r[1]),"y":int(r[2]), "source": args.sourcename, "meta": metastring, "version": "btretrodetect, v2.0", "label":"", "confidence": r[0]}
             json_list.append(json_item)
 
         datapath = possiblepath+'/'+args.sourcename
