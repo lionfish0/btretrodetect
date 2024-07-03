@@ -46,6 +46,7 @@ class Retrodetect:
         self.max_dilated_img = None
         self.idx = 0
         self.Nmaxdilations = Nmaxdilations
+        self.runningavg = 0 #used to remove no-flash photos!
         
     def find_tags(self,diff,img):
         results = []
@@ -54,7 +55,7 @@ class Retrodetect:
 
 
         np.set_printoptions(precision=2,suppress=True)
-        for Npatches in range(5):
+        for Npatches in range(25):
             y,x = np.unravel_index(diff.argmax(), diff.shape)
             
                 
@@ -65,31 +66,38 @@ class Retrodetect:
             diff[max(0,y-delsize):min(diff.shape[0],y+delsize),max(0,x-delsize):min(diff.shape[1],x+delsize)]=-5000
 
             if (x<=20) or (x>=diff.shape[1]-20) or (y<=20) or (y>=diff.shape[0]-20):
-                res=np.array([-100,x,y,0,0,0,0,0,0,diff_patch,temp])
+                res=np.array([-100,x,y,0,0,0,0,0,0,0,diff_patch,temp])
                 results.append(res)
                 continue
                 
             centreimg = img_patch[17:24,17:24].copy()
-            img_patch[37:44,37:44]=0
+            #img_patch[37:44,37:44]=0
             centre_max=np.max(centreimg.flatten())
             bg_mean=np.mean(img_patch.flatten())
-
+            outersurround_mean = np.sum(img_patch[[16,20,24,20,16,16,24,24],[20,16,20,24,16,24,16,24]])
             outersurround_max = np.max(img_patch[[16,20,24,20,16,16,24,24],[20,16,20,24,16,24,16,24]])
             innersurround_max = np.max(img_patch[[18,20,22,20,18,18,22,22],[20,18,20,22,18,22,18,22]])
+            
             #not used?
-            #centre_sum = np.sum(img_patch[[20,20,20,19,21],[20,21,19,20,20]])
-            pred = 5
+            centre_sum = np.sum(img_patch[[20,20,20,19,21],[20,21,19,20,20]])
+            pred = -10
             #pred-= 250/(1+diff_max) #value at max in difference image
-            pred+= diff_max/100 #?
-            pred-= 250/(1+centre_max) #maximum in centre of tag zone in normal image
-            pred-= 20*innersurround_max/centre_max #ratio of the max value in the innersurrounding pixels and the maximum
-            pred-=outersurround_max/100 #how bright the outer surrounding pixels are
+            pred+= centre_sum/4
+            pred+= diff_max/2 #?
+            if diff_max<10:
+                pred+=diff_max-10
+            #pred-= 250/(1+centre_max) #maximum in centre of tag zone in normal image
+            pred-= 30*innersurround_max/centre_max #ratio of the max value in the innersurrounding pixels and the maximum
+            #pred-= innersurround_max/5
+            pred-= 400*outersurround_max/centre_max
+            pred-= 10*outersurround_mean
+            #pred-=outersurround_max #how bright the outer surrounding pixels are
 
-            res=np.array([pred,x,y,diff_max,centre_max,bg_mean,outersurround_max,innersurround_max,centre_max,diff_patch,temp])
+            res=np.array([pred,x,y,diff_max,centre_max,bg_mean,outersurround_max,innersurround_max,centre_sum,outersurround_mean,diff_patch,temp])
             results.append(res)
         return results
         
-    def process_photo(self,photo_item,idx=None):
+    def process_photo(self,photo_item,idx=None,skipNoFlash=True):
         """
         Processes a photo object.
          - normalise
@@ -111,8 +119,16 @@ class Retrodetect:
             img = photo_item['img'].astype(np.float32)
         except AttributeError:
             return []
+            
+        #remove no-flash photos...
+        if skipNoFlash:
+            avg = np.mean(img)
+            if avg<self.runningavg*0.1: #if we're less than 10% of the average... probably a no-flash photo
+                print("|NF",end="")
+                return []
+            self.runningavg = self.runningavg*0.7 + avg*0.3 #rolling average (handles gradual changes in daylight?)
+        
         #normalise photo
-        img = 5*img/np.mean(img)
         #compute the difference photo...
         diff_img = img-np.max(self.max_dilated_img,2)
         
