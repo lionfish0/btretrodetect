@@ -17,6 +17,8 @@ parser.add_argument('--before',required=False,type=str,help='Only process images
 parser.add_argument('--refreshcache',help='Whether to refresh the cache',action="store_true")
 parser.add_argument('--threshold',help='Threshold of score before adding to data (default=0)',type=str,default=0)
 parser.add_argument('--sourcename',help='The name to give this source of labels (default:btretrodetect)',type=str,default='btretrodetect')
+parser.add_argument('--groupby',help='Which classifier to use (either one specific to this camera, set or all data). (default: camera; choices: camera, set, all)',type=str,default='camera')
+
 #TODO: Might want to either; (a) overwrite, (b) skip, (c) append...
 #parser.add_argument('--',help='Stops it overwriting previous labels from this source (default behaviour is to do overwrite)',action="store_true") 
 args = parser.parse_args()
@@ -24,7 +26,7 @@ args = parser.parse_args()
 
 def totalsecs(st):
     try:
-        time_hms = [int(s) for s in re.findall('([0-9]{1,2})[:\+]([0-9]{2})[:\+]([0-9]{2})',st)[0]]
+        time_hms = [int(s) for s in re.findall('([0-9]{1,2})[:+]([0-9]{2})[:+]([0-9]{2})',st)[0]]
     except TypeError as e:
         print("Tried to find time of format HH:MM:SS in '%s'" % st)
         raise e
@@ -48,18 +50,19 @@ for possiblepath in [x[0] for x in os.walk(imgpath) if '/.' not in x[0]]:
         if not before>totalsecs(imgfilename)>after:
             continue
         print(fn+" ",end="")
-        res = rd.process_photo(pickle.load(open(fn,'rb')))        
+        photoitem = pickle.load(open(fn,'rb'))
+        rd.process_image(photoitem,args.groupby)        
         json_list = []
-        for r in res:
-            if r[0]<float(args.threshold):
+        if 'imgpatches' not in photoitem:
+            #print("No plausible patches in image %s." % fn)
+            continue
+        
+        for patch in photoitem['imgpatches']:
+            if patch['retrodetect_predictions']<float(args.threshold):
                 print(".",end="") 
                 continue #not a tag
             print("x",end="")
-            #diff_max,centre_max,bg_mean,outersurround_max,innersurround_max,centre_sum,diff_patch
-            #metastring = "%0.1f"%r[0]+'('+', '.join(["%0.0f" % d for d in r[3:9]])+')'
-            featurenames = ['dmx','cmx','bg','omx','imx','csum','omean']
-            metastring = "%0.1f"%r[0]+'('+', '.join(["%s=%0.0f" % (s,d) for s,d in zip(featurenames,r[3:10])])+')'
-            json_item = {"x":int(r[1]),"y":int(r[2]), "source": args.sourcename, "meta": metastring, "version": "btretrodetect, v2.0", "label":"", "confidence": r[0]}
+            json_item = {"x":int(r[1]),"y":int(r[2]), "source": args.sourcename, "version": "btretrodetect, v2.0", "label":"", "confidence": patch['retrodetect_predictions']}
             json_list.append(json_item)
 
         datapath = possiblepath+'/'+args.sourcename
