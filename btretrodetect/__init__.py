@@ -167,8 +167,8 @@ def getstats(patch):
     stats.extend(getringstats(patch['img_patch']))    
     return stats
 
-class PhotoQueues():
-    def __init__(self,pathtodata,groupby='camera',stopearly=None):
+class TrainRetrodetectModel():
+    def __init__(self,pathtodata,groupby='all',stopearly=None):
         """
         Manages a dictionary of photo_queues; each photo_queue can then be used to train
         the ML classifier separately. This class is just needed when training the models.
@@ -179,11 +179,11 @@ class PhotoQueues():
         - pathtodata: path to the data (this can be e.g. a session or set, etc.
         - groupby: the photo_queues generated could be amalgamated into either separate photo_queues by:
            - 'set'
-           - 'camera' (so the same camera in different sets), default
-           - 'all' (all the data from all the cameras into a single photo_queue).
+           - 'camera' (so the same camera in different sets),
+           - 'all' (all the data from all the cameras into a single photo_queue). [default]
         
-        Returns:
-         - a dictionary of photo_queues, split depending on groupby.    
+        !! At the moment getting the camera or set from the live data is difficult, so we default to 'all'.
+        Stores in 'photo_queues' parameter a dictionary of photo_queues, split depending on groupby.    
         """
 
         photo_queues = {}
@@ -242,7 +242,6 @@ class PhotoQueues():
         y = []
         for patch,label in zip(patches,labels):
             try:
-                print('.',end="")
                 stats = getstats(patch)
                 if stats is None: continue #failed to generate stats
             except: #some of the patches are on the edge of the image, and we can't compute the stats for these
@@ -251,7 +250,6 @@ class PhotoQueues():
 
             X.append(stats)
             y.append(label)
-        print("") 
         X = np.array(X)
         y = np.array(y)
         #y = np.array(labels)
@@ -317,7 +315,6 @@ class PhotoQueues():
             clfs = {}
         oldkeynum = np.random.randint(1000000) #to be nice, I just move the old classifier to another key...
         for key, photo_queue in self.photo_queues.items():
-            print(len(photo_queue))
             X,y = self.build_patch_dataset(photo_queue,8)
             if key in clfs:
                 oldkey = key+'__%d' % oldkeynum
@@ -349,7 +346,8 @@ class Retrodetect:
         self.patchThreshold = 4
         self.idx = 0
         self.imgcount = 0
-        
+        self.associated_colour_retrodetect = None
+    
     def classify_patches(self,photoitem,groupby='camera'):
         clfsfile = configpath+'clfs.pkl'
         try:
@@ -357,14 +355,22 @@ class Retrodetect:
         except:
             print("No classifiers found.")
             return
-        print("====")
-        print(photoitem['filename'])
-        if groupby=='camera':
-            clfname = os.path.normpath(photoitem['filename']).split(os.sep)[-2]
-        if groupby=='set':
-            clfname = '/'.join(os.path.normpath(photoitem['filename']).split(os.sep)[-4:-1])
-        if groupby=='all':
-            clfname = 'all'
+            
+        ##TODO I've added code to bee_track to now save this info into the photoitem,
+        # photo_object['session_name'] = session_name
+        # photo_object['set_name'] = set_name
+        # photo_object['dev_id'] = self.devid.value
+        # photo_object['camid'] = camid
+        #but this data isn't in the examples I'm using. Later we should incorporate.
+        
+        #print("====")
+        #print(photoitem['filename'])
+        #if groupby=='camera':
+        #    clfname = os.path.normpath(photoitem['filename']).split(os.sep)[-2]
+        #if groupby=='set':
+        #    clfname = '/'.join(os.path.normpath(photoitem['filename']).split(os.sep)[-4:-1])
+        #if groupby=='all':
+        clfname = 'all'
 
         if clfname not in clfs:
             print("Classifier not found for %s" % clfname)
@@ -379,6 +385,7 @@ class Retrodetect:
             patch['retrodetect_predictions'] = res
     
     def process_image(self,photoitem,groupby='camera'): ##TODO: PASS THIS METHOD THE CLASSIFIER WE WANT TO USE... AS IT WON'T HAVE ACCESS TO A FILENAME/PATH NECESSARILY
+
         raw_img = photoitem['img'].astype(float)
         blurred = fast_gaussian_filter(raw_img,self.normalisation_blur)    
         img = raw_img/(1+blurred)   
@@ -397,8 +404,7 @@ class Retrodetect:
             other_subtraction_img = np.max(self.previous_dilated_imgs[:,:,:(self.idx-self.Ndilated_skip)],2)
             subtraction_img = np.max(np.array([other_subtraction_img,subtraction_img]),0)
 
-            
-            
+    
         self.imgcount+=1
 
         
@@ -408,6 +414,11 @@ class Retrodetect:
         resized_subtraction_img[blocksize*offset:(blocksize*offset+insideimg.shape[0]),blocksize*offset:(blocksize*offset+insideimg.shape[1])] = insideimg
         diff = img - resized_subtraction_img
         #photoitem['resized_subtraction_img'] = resized_subtraction_img.copy()
+        
+
+        #We need to temporarily keep this 'diff' image, as this is a handy way of finding the
+        #a tag in the colour image near the one found in the greyscale image, but it needs to
+        #be removed later.
         #photoitem['diff'] = diff.copy()
 
         
@@ -420,11 +431,14 @@ class Retrodetect:
                 img_max = img[y,x]
                 raw_max = raw_img[y,x]
                 img_patch = img[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].astype(np.float32).copy()
-                temp = img_patch.copy()
-                diff_patch = diff[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].copy().astype(np.float32)        
+                diff_patch = diff[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].copy().astype(np.float32)
+                raw_patch = raw_img[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].copy().astype(np.float32)     
                 diff[max(0,y-self.delSize):min(diff.shape[0],y+self.delSize),max(0,x-self.delSize):min(diff.shape[1],x+self.delSize)]=-5000
-                photoitem['imgpatches'].append({'img_patch':img_patch, 'diff_patch':diff_patch, 'x':x, 'y':y, 'diff_max':diff_max, 'img_max':img_max, 'raw_max':raw_max})
+                photoitem['imgpatches'].append({'raw_patch':raw_patch, 'img_patch':img_patch, 'diff_patch':diff_patch, 'x':x, 'y':y, 'diff_max':diff_max, 'img_max':img_max, 'raw_max':raw_max})
             self.classify_patches(photoitem,groupby)
+            
+        if self.associated_colour_retrodetect is not None:
+            self.associated_colour_retrodetect.newgreyscaleimage(photoitem)
 
     def save_image(self,photoitem,fn,keepimg=False):    
         compact_photoitem = photoitem.copy()
@@ -435,6 +449,136 @@ class Retrodetect:
         scaledimg[scaledimg>255]=255
         compact_photoitem['jpgimg'] = simplejpeg.encode_jpeg(scaledimg[:,:,None].astype(np.uint8),colorspace='GRAY',quality=8)
         if not keepimg: compact_photoitem['img'] = None
+        
         pickle.dump(compact_photoitem, open(fn,'wb'))
         
         
+            
+class ColourRetrodetect(Retrodetect):
+    def __init__(self,Nbg_keep = 20,Nbg_skip = 5,normalisation_blur=50,patchSize=16):
+        offset_configfile = configpath+'offset.csv'
+        try:
+            with open(offset_configfile,'r') as f:
+                self.offset = [int(st) for st in f.read().split(',')]
+        except:
+            print("No offset data found. Using [0,0]!!! To set correctly, create a file %s containing (x-offset, y-offset)" % offset_configfile)
+            self.offset = [0,0]
+        assert len(self.offset)==2
+        self.Nbg_keep = Nbg_keep
+        self.Nbg_skip = Nbg_skip
+        self.patchSize = patchSize
+        self.normalisation_blur = normalisation_blur
+        self.Nbg_use = Nbg_keep - Nbg_skip
+        self.previous_bg_imgs = None #keep track of previous imgs...
+        self.idx = 0
+        self.imgcount = 0
+
+        
+        self.unassociated_photoitems = []
+        self.greyscale_photoitems = []
+        
+    def newgreyscaleimage(self,greyscale_photoitem):
+        self.greyscale_photoitems.append(greyscale_photoitem)
+        self.match_images()
+        if len(self.greyscale_photoitems)>10:
+            del self.greyscale_photoitems[0]
+        
+            
+    #def process_colour_image(self,photoitem,gs_photoitem):
+    #    if 'imgpatches' not in gs_photoitem:
+    #        print("No image patches in greyscale photo")
+    #        return
+    #    photoitem['imgpatches'] = []
+    #    for patch in gs_photoitem['imgpatches']:
+    #        
+    #        photoitem['imgpatches'].append({'img_patch':patch, 'diff_patch':diff_patch, 'x':x, 'y':y, 'diff_max':diff_max, 'img_max':img_max, 'raw_max':raw_max})
+
+    def process_colour_image(self,photoitem,patchcoords):
+        raw_img = photoitem['img'].astype(float)
+        blurred = fast_gaussian_filter(raw_img,self.normalisation_blur)    
+        img = raw_img/(1+blurred)   
+        if self.previous_bg_imgs is None:
+            self.previous_bg_imgs = np.zeros(list(img.shape)+[self.Nbg_keep])
+        self.previous_bg_imgs[:,:,self.idx] = img
+    
+        self.idx = (self.idx + 1) % self.Nbg_keep
+
+        #how many items are we adding here...
+        #if idx+bg_use<bg_keep, then it is simply #e.g. Nbg_use = Nbg_keep - Nbg_skip
+        #otherwise,
+        #it is:
+        # #e.g. (Nbg_keep-idx) + idx-Nbg_skip = Nbg_keep - Nbg_skip
+        #so it is always Nbg_keep - Nbg_skip = Nbg_use
+        subtraction_img = np.sum(self.previous_bg_imgs[:,:,self.idx:(self.idx+self.Nbg_use)],2)   
+        if self.idx+self.Nbg_use>self.Nbg_keep:
+            other_subtraction_img = np.sum(self.previous_bg_imgs[:,:,:(self.idx-self.Nbg_skip)],2) #idx-bgskip
+            subtraction_img = np.sum(np.array([other_subtraction_img,subtraction_img]),0)
+        #subtraction_img = np.sum(self.previous_bg_imgs,2)
+        if min(self.Nbg_use,self.imgcount-self.Nbg_skip)>0:
+            subtraction_img=subtraction_img.astype(float)/min(self.Nbg_use,self.imgcount-self.Nbg_skip)
+        
+    
+        self.imgcount+=1
+
+        
+        #resized_subtraction_img = np.empty_like(img)
+        #insideimg = subtraction_img.repeat(blocksize,axis=0).repeat(blocksize,axis=1)
+        #resized_subtraction_img[:insideimg.shape[0],:insideimg.shape[1]] = insideimg    
+        #resized_subtraction_img[blocksize*offset:(blocksize*offset+insideimg.shape[0]),blocksize*offset:(blocksize*offset+insideimg.shape[1])] = insideimg
+        diff = img - subtraction_img
+        #photoitem['resized_subtraction_img'] = resized_subtraction_img.copy()
+
+        #stored for debugging.
+        #photoitem['sub'] = subtraction_img
+        #photoitem['img'] = img
+
+        #We need to temporarily keep this 'diff' image, as this is a handy way of finding the
+        #a tag in the colour image near the one found in the greyscale image, but it needs to
+        #be removed later.
+        #photoitem['diff'] = diff.copy()
+
+        photoitem['imgpatches'] = []
+        for y,x in patchcoords:
+            x = x + self.offset[0]
+            y = y + self.offset[1]
+            x = 2*(x//2)
+            y = 2*(y//2)
+
+            img_patch = img[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].astype(np.float32).copy()
+            diff_patch = diff[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].copy().astype(np.float32)        
+            raw_patch = raw_img[y-self.patchSize:y+self.patchSize,x-self.patchSize:x+self.patchSize].copy().astype(np.float32)
+            
+            photoitem['imgpatches'].append({'raw_patch':raw_patch, 'img_patch':img_patch, 'diff_patch':diff_patch, 'x':x, 'y':y})
+
+    def match_images(self):
+        """
+        Tries to match the images in self.unassociated_photoitems with those in self.greyscale_photoitems,
+        this method is called after either a call to process_image (i.e. with a colour image added), or a call to
+        newgreyscaleimage, with a new greyscale image.
+        """
+        for photo in self.unassociated_photoitems:
+            match = [gs_photo for gs_photo in self.greyscale_photoitems if photo['record']['triggertime']==gs_photo['record']['triggertime']]
+            if len(match)>0:
+                self.greyscale_photoitems.remove(match[0])
+                if ('imgpatches' not in match[0]): #this greyscale image doesn't have any patches
+                    self.unassociated_photoitems.remove(photo)
+                    
+                    continue
+                photo['imgpatches'] = []
+                patch_coordinates = [(patch['y'],patch['x']) for patch in match[0]['imgpatches']]
+                    
+                self.process_colour_image(photo,patch_coordinates)
+                #SAVE PHOTO!
+                #super().save_image(photo)
+                #photo['asssociated_gs_photoitem'] = match[0]
+                #self.process_colour_image(photo,match[0])
+                self.unassociated_photoitems.remove(photo)
+        
+    def process_image(self,photoitem):
+        #look for any matching photos...
+        self.unassociated_photoitems.append(photoitem)
+        self.match_images()
+        
+
+        if len(self.unassociated_photoitems)>10:
+            del self.unassociated_photoitems[0]
