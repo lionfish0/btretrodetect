@@ -1,5 +1,6 @@
 # retrodetect
 - This new version (completely rewritten) assumes all the photos are flash photos.
+- Also handles colour camera!
 
 # install
 ```pip install git+https://github.com/lionfish0/btretrodetect.git```
